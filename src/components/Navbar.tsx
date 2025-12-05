@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
+import { usePageTransition } from "./PageTransition";
 
 const navLinks = [
   { label: "Home", href: "#home" },
@@ -17,6 +18,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const { scrollY } = useScroll();
+  const { triggerTransition } = usePageTransition();
   
   const navBackground = useTransform(
     scrollY,
@@ -28,7 +30,6 @@ const Navbar = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
       
-      // Update active section based on scroll position
       const sections = navLinks.map(link => link.href.slice(1));
       for (const section of sections.reverse()) {
         const element = document.getElementById(section);
@@ -47,10 +48,23 @@ const Navbar = () => {
   }, []);
 
   const scrollToSection = (href: string) => {
-    const element = document.getElementById(href.slice(1));
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+    const targetSection = href.slice(1);
+    
+    // Only trigger transition if navigating to a different section
+    if (activeSection !== targetSection) {
+      triggerTransition(() => {
+        const element = document.getElementById(targetSection);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      });
+    } else {
+      const element = document.getElementById(targetSection);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
     }
+    
     setIsMobileMenuOpen(false);
   };
 
