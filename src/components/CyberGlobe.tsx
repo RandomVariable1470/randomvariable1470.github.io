@@ -1,8 +1,9 @@
 import { useRef, useMemo, useState, useEffect } from "react";
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
 
 // Convert lat/lng to 3D position on sphere
 const latLngToVector3 = (lat: number, lng: number, radius: number) => {
@@ -18,22 +19,37 @@ const latLngToVector3 = (lat: number, lng: number, radius: number) => {
 // New Delhi coordinates
 const NEW_DELHI = { lat: 28.6139, lng: 77.209 };
 
+// Custom hook to load textures with error handling
+const useTexture = (url: string) => {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      url,
+      (loadedTexture) => {
+        setTexture(loadedTexture);
+      },
+      undefined,
+      () => {
+        // Silently fail - texture won't be used
+        console.warn(`Failed to load texture: ${url}`);
+      }
+    );
+  }, [url]);
+  
+  return texture;
+};
+
 const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
   const earthRef = useRef<THREE.Mesh>(null);
   const cloudsRef = useRef<THREE.Mesh>(null);
-  const glowRef = useRef<THREE.Mesh>(null);
   const particlesRef = useRef<THREE.Points>(null);
 
-  // Load Earth textures
-  const [earthTexture, bumpTexture, specularTexture, cloudsTexture] = useLoader(
-    THREE.TextureLoader,
-    [
-      'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg',
-      'https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png',
-      'https://unpkg.com/three-globe@2.31.0/example/img/earth-water.png',
-      'https://unpkg.com/three-globe@2.31.0/example/img/earth-clouds.png',
-    ]
-  );
+  // Load Earth textures with error handling
+  const earthTexture = useTexture('https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg');
+  const bumpTexture = useTexture('https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png');
+  const cloudsTexture = useTexture('https://unpkg.com/three-globe@2.31.0/example/img/earth-clouds.png');
 
   // Create particle positions for atmosphere effect
   const particlePositions = useMemo(() => {
@@ -49,9 +65,7 @@ const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
     return positions;
   }, []);
 
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime();
-    
+  useFrame(() => {
     if (earthRef.current && !isZoomed) {
       earthRef.current.rotation.y += 0.001;
     }
@@ -74,25 +88,27 @@ const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
           map={earthTexture}
           bumpMap={bumpTexture}
           bumpScale={0.05}
-          specularMap={specularTexture}
           specular={new THREE.Color('#2dd4bf')}
           shininess={5}
+          color={earthTexture ? undefined : '#1a3a4a'}
         />
       </mesh>
 
-      {/* Cloud layer */}
-      <mesh ref={cloudsRef}>
-        <sphereGeometry args={[2.02, 64, 64]} />
-        <meshPhongMaterial
-          map={cloudsTexture}
-          transparent
-          opacity={0.3}
-          depthWrite={false}
-        />
-      </mesh>
+      {/* Cloud layer - only render if texture loaded */}
+      {cloudsTexture && (
+        <mesh ref={cloudsRef}>
+          <sphereGeometry args={[2.02, 64, 64]} />
+          <meshPhongMaterial
+            map={cloudsTexture}
+            transparent
+            opacity={0.3}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
 
       {/* Atmosphere glow */}
-      <mesh ref={glowRef} scale={1.15}>
+      <mesh scale={1.15}>
         <sphereGeometry args={[2, 64, 64]} />
         <shaderMaterial
           transparent
@@ -201,6 +217,37 @@ const LoadingFallback = () => (
   </mesh>
 );
 
+// Error boundary for Three.js canvas
+class GlobeErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
+              <span className="text-2xl">🌍</span>
+            </div>
+            <p className="text-muted-foreground text-sm">Globe loading...</p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const CyberGlobe = () => {
   const [isZoomed, setIsZoomed] = useState(false);
 
@@ -233,26 +280,29 @@ const CyberGlobe = () => {
             <div className="w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
           </div>
 
-          <Canvas
-            camera={{ position: isZoomed ? [0, 1, 4] : [0, 0, 6], fov: 45 }}
-            style={{ background: 'transparent' }}
-          >
-            <ambientLight intensity={0.3} />
-            <directionalLight position={[5, 3, 5]} intensity={1} />
-            <directionalLight position={[-5, -3, -5]} intensity={0.3} color="#2dd4bf" />
-            
-            <React.Suspense fallback={<LoadingFallback />}>
-              <Earth isZoomed={isZoomed} />
-            </React.Suspense>
-            
-            <OrbitControls
-              enableZoom={false}
-              enablePan={false}
-              autoRotate={!isZoomed}
-              autoRotateSpeed={0.3}
-              target={isZoomed ? latLngToVector3(NEW_DELHI.lat, NEW_DELHI.lng, 0) : [0, 0, 0]}
-            />
-          </Canvas>
+          <GlobeErrorBoundary>
+            <Canvas
+              camera={{ position: isZoomed ? [0, 1, 4] : [0, 0, 6], fov: 45 }}
+              style={{ background: 'transparent' }}
+              gl={{ antialias: true, alpha: true }}
+            >
+              <ambientLight intensity={0.3} />
+              <directionalLight position={[5, 3, 5]} intensity={1} />
+              <directionalLight position={[-5, -3, -5]} intensity={0.3} color="#2dd4bf" />
+              
+              <React.Suspense fallback={<LoadingFallback />}>
+                <Earth isZoomed={isZoomed} />
+              </React.Suspense>
+              
+              <OrbitControls
+                enableZoom={false}
+                enablePan={false}
+                autoRotate={!isZoomed}
+                autoRotateSpeed={0.3}
+                target={isZoomed ? latLngToVector3(NEW_DELHI.lat, NEW_DELHI.lng, 0) : [0, 0, 0]}
+              />
+            </Canvas>
+          </GlobeErrorBoundary>
 
           {/* Corner decorations */}
           <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-primary/30" />
@@ -278,5 +328,4 @@ const CyberGlobe = () => {
   );
 };
 
-import React from "react";
 export default CyberGlobe;
