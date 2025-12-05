@@ -14,6 +14,7 @@ import Footer from "@/components/Footer";
 import MathSymbolEasterEggs from "@/components/MathSymbolEasterEggs";
 import AvatarEvolution from "@/components/AvatarEvolution";
 import KonamiCode from "@/components/KonamiCode";
+import BackToTop from "@/components/BackToTop";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +53,9 @@ const Index = () => {
 
       {/* Avatar evolution widget */}
       <AvatarEvolution />
+
+      {/* Back to top button */}
+      <BackToTop />
 
       {/* Konami code handler */}
       <KonamiCode onActivate={handleKonamiActivate} />
