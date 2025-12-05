@@ -1,5 +1,5 @@
-import { useRef, useMemo, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef, useMemo, useState, useEffect } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,23 +18,30 @@ const latLngToVector3 = (lat: number, lng: number, radius: number) => {
 // New Delhi coordinates
 const NEW_DELHI = { lat: 28.6139, lng: 77.209 };
 
-const WireframeGlobe = ({ isZoomed }: { isZoomed: boolean }) => {
-  const globeRef = useRef<THREE.Group>(null);
+const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
+  const earthRef = useRef<THREE.Mesh>(null);
+  const cloudsRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
   const particlesRef = useRef<THREE.Points>(null);
 
-  // Create wireframe sphere geometry
-  const wireframeGeometry = useMemo(() => {
-    const geometry = new THREE.IcosahedronGeometry(2, 3);
-    return geometry;
-  }, []);
+  // Load Earth textures
+  const [earthTexture, bumpTexture, specularTexture, cloudsTexture] = useLoader(
+    THREE.TextureLoader,
+    [
+      'https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg',
+      'https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png',
+      'https://unpkg.com/three-globe@2.31.0/example/img/earth-water.png',
+      'https://unpkg.com/three-globe@2.31.0/example/img/earth-clouds.png',
+    ]
+  );
 
-  // Create particle positions for links
+  // Create particle positions for atmosphere effect
   const particlePositions = useMemo(() => {
-    const positions = new Float32Array(200 * 3);
-    for (let i = 0; i < 200; i++) {
+    const positions = new Float32Array(300 * 3);
+    for (let i = 0; i < 300; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
-      const radius = 2 + Math.random() * 0.5;
+      const radius = 2.2 + Math.random() * 0.3;
       positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = radius * Math.cos(phi);
       positions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
@@ -43,51 +50,85 @@ const WireframeGlobe = ({ isZoomed }: { isZoomed: boolean }) => {
   }, []);
 
   useFrame((state) => {
-    if (globeRef.current && !isZoomed) {
-      globeRef.current.rotation.y += 0.002;
+    const time = state.clock.getElapsedTime();
+    
+    if (earthRef.current && !isZoomed) {
+      earthRef.current.rotation.y += 0.001;
+    }
+    if (cloudsRef.current) {
+      cloudsRef.current.rotation.y += 0.0015;
     }
     if (particlesRef.current) {
-      particlesRef.current.rotation.y += 0.001;
+      particlesRef.current.rotation.y += 0.0005;
     }
   });
 
   const delhiPosition = latLngToVector3(NEW_DELHI.lat, NEW_DELHI.lng, 2.05);
 
   return (
-    <group ref={globeRef}>
-      {/* Wireframe globe */}
-      <mesh geometry={wireframeGeometry}>
+    <group>
+      {/* Main Earth sphere */}
+      <mesh ref={earthRef}>
+        <sphereGeometry args={[2, 64, 64]} />
+        <meshPhongMaterial
+          map={earthTexture}
+          bumpMap={bumpTexture}
+          bumpScale={0.05}
+          specularMap={specularTexture}
+          specular={new THREE.Color('#2dd4bf')}
+          shininess={5}
+        />
+      </mesh>
+
+      {/* Cloud layer */}
+      <mesh ref={cloudsRef}>
+        <sphereGeometry args={[2.02, 64, 64]} />
+        <meshPhongMaterial
+          map={cloudsTexture}
+          transparent
+          opacity={0.3}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Atmosphere glow */}
+      <mesh ref={glowRef} scale={1.15}>
+        <sphereGeometry args={[2, 64, 64]} />
+        <shaderMaterial
+          transparent
+          side={THREE.BackSide}
+          uniforms={{
+            glowColor: { value: new THREE.Color('#2dd4bf') },
+            viewVector: { value: new THREE.Vector3(0, 0, 5) },
+          }}
+          vertexShader={`
+            varying vec3 vNormal;
+            void main() {
+              vNormal = normalize(normalMatrix * normal);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `}
+          fragmentShader={`
+            varying vec3 vNormal;
+            uniform vec3 glowColor;
+            void main() {
+              float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+              gl_FragColor = vec4(glowColor, intensity * 0.4);
+            }
+          `}
+        />
+      </mesh>
+
+      {/* Cyber grid overlay */}
+      <mesh>
+        <sphereGeometry args={[2.01, 32, 32]} />
         <meshBasicMaterial
           color="#2dd4bf"
           wireframe
           transparent
-          opacity={0.3}
-        />
-      </mesh>
-
-      {/* Inner glow sphere */}
-      <mesh>
-        <sphereGeometry args={[1.95, 32, 32]} />
-        <meshBasicMaterial
-          color="#0d9488"
-          transparent
           opacity={0.05}
         />
       </mesh>
-
-      {/* Latitude/longitude lines */}
-      {[...Array(8)].map((_, i) => (
-        <mesh key={`lat-${i}`} rotation={[0, 0, (i * Math.PI) / 8]}>
-          <torusGeometry args={[2, 0.005, 8, 64]} />
-          <meshBasicMaterial color="#2dd4bf" transparent opacity={0.2} />
-        </mesh>
-      ))}
-      {[...Array(8)].map((_, i) => (
-        <mesh key={`lng-${i}`} rotation={[(i * Math.PI) / 8, Math.PI / 2, 0]}>
-          <torusGeometry args={[2, 0.005, 8, 64]} />
-          <meshBasicMaterial color="#2dd4bf" transparent opacity={0.2} />
-        </mesh>
-      ))}
 
       {/* Floating particles */}
       <points ref={particlesRef}>
@@ -99,45 +140,51 @@ const WireframeGlobe = ({ isZoomed }: { isZoomed: boolean }) => {
         </bufferGeometry>
         <pointsMaterial
           color="#5eead4"
-          size={0.03}
+          size={0.02}
           transparent
-          opacity={0.6}
+          opacity={0.5}
           sizeAttenuation
         />
       </points>
 
       {/* New Delhi pin */}
       <group position={delhiPosition}>
+        {/* Pin base */}
         <mesh>
-          <sphereGeometry args={[0.08, 16, 16]} />
+          <sphereGeometry args={[0.06, 16, 16]} />
           <meshBasicMaterial color="#2dd4bf" />
         </mesh>
-        {/* Glow ring */}
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.1, 0.15, 32]} />
-          <meshBasicMaterial color="#5eead4" transparent opacity={0.5} side={THREE.DoubleSide} />
-        </mesh>
+        
+        {/* Glow effect */}
+        <pointLight color="#2dd4bf" intensity={0.5} distance={0.5} />
+        
         {/* Pulse rings */}
-        {[0.2, 0.3, 0.4].map((size, i) => (
+        {[0.1, 0.15, 0.2].map((size, i) => (
           <mesh key={i} rotation={[Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[size, size + 0.02, 32]} />
+            <ringGeometry args={[size, size + 0.015, 32]} />
             <meshBasicMaterial 
               color="#2dd4bf" 
               transparent 
-              opacity={0.3 - i * 0.1} 
+              opacity={0.4 - i * 0.1} 
               side={THREE.DoubleSide}
             />
           </mesh>
         ))}
+
+        {/* Pin spike pointing outward */}
+        <mesh position={[0, 0, 0.15]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.03, 0.15, 8]} />
+          <meshBasicMaterial color="#2dd4bf" />
+        </mesh>
         
         {isZoomed && (
           <Html position={[0.3, 0.3, 0]} center>
             <motion.div
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-background/90 backdrop-blur-md border border-primary/30 rounded-lg px-4 py-2 whitespace-nowrap"
+              className="bg-background/90 backdrop-blur-md border border-primary/30 rounded-lg px-4 py-2 whitespace-nowrap shadow-lg shadow-primary/20"
             >
-              <p className="text-primary font-mono text-sm font-bold">📍 New Delhi</p>
+              <p className="text-primary font-mono text-sm font-bold">📍 New Delhi, India</p>
               <p className="text-muted-foreground text-xs">You found Random Variable!</p>
             </motion.div>
           </Html>
@@ -146,6 +193,13 @@ const WireframeGlobe = ({ isZoomed }: { isZoomed: boolean }) => {
     </group>
   );
 };
+
+const LoadingFallback = () => (
+  <mesh>
+    <sphereGeometry args={[2, 32, 32]} />
+    <meshBasicMaterial color="#1a1a2e" wireframe />
+  </mesh>
+);
 
 const CyberGlobe = () => {
   const [isZoomed, setIsZoomed] = useState(false);
@@ -176,21 +230,26 @@ const CyberGlobe = () => {
         >
           {/* Glow background */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+            <div className="w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
           </div>
 
           <Canvas
             camera={{ position: isZoomed ? [0, 1, 4] : [0, 0, 6], fov: 45 }}
             style={{ background: 'transparent' }}
           >
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={0.5} />
-            <WireframeGlobe isZoomed={isZoomed} />
+            <ambientLight intensity={0.3} />
+            <directionalLight position={[5, 3, 5]} intensity={1} />
+            <directionalLight position={[-5, -3, -5]} intensity={0.3} color="#2dd4bf" />
+            
+            <React.Suspense fallback={<LoadingFallback />}>
+              <Earth isZoomed={isZoomed} />
+            </React.Suspense>
+            
             <OrbitControls
               enableZoom={false}
               enablePan={false}
               autoRotate={!isZoomed}
-              autoRotateSpeed={0.5}
+              autoRotateSpeed={0.3}
               target={isZoomed ? latLngToVector3(NEW_DELHI.lat, NEW_DELHI.lng, 0) : [0, 0, 0]}
             />
           </Canvas>
@@ -219,4 +278,5 @@ const CyberGlobe = () => {
   );
 };
 
+import React from "react";
 export default CyberGlobe;
