@@ -18,38 +18,14 @@ const Skills = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: "spring" as const,
-        stiffness: 100,
-        damping: 10,
-      },
-    },
-  };
-
   return (
     <section id="skills" className="py-32 px-6 relative">
       <div className="max-w-4xl mx-auto" ref={ref}>
         {/* Section title */}
         <motion.div
           className="flex items-center gap-3 mb-4"
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
         >
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border/50" />
@@ -61,18 +37,18 @@ const Skills = () => {
 
         <motion.h3
           className="text-3xl md:text-4xl font-bold text-center mb-4"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.2, duration: 0.6 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
         >
           Skills I'm leveling up <span className="text-gradient">🎮</span>
         </motion.h3>
 
         <motion.p
           className="text-center text-muted-foreground mb-16 font-mono text-sm"
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.4 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.2 }}
         >
           Still learning, still leveling up. XP bar loading...
         </motion.p>
@@ -80,17 +56,24 @@ const Skills = () => {
         {/* Skills grid */}
         <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.3 }}
         >
-          {skills.map((skill) => (
+          {skills.map((skill, index) => (
             <motion.div
               key={skill.name}
-              variants={itemVariants}
+              initial={{ opacity: 0, y: 40, scale: 0.8, rotate: -5 }}
+              animate={isInView ? { opacity: 1, y: 0, scale: 1, rotate: 0 } : {}}
+              transition={{
+                delay: 0.3 + index * 0.08,
+                type: "spring",
+                stiffness: 100,
+                damping: 12,
+              }}
               whileHover={{
                 scale: 1.05,
-                y: -5,
+                y: -8,
                 transition: { type: "spring", stiffness: 400, damping: 10 },
               }}
               className="hoverable group relative"
@@ -100,7 +83,11 @@ const Skills = () => {
                 <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 
                 <div className="relative">
-                  <span className="text-3xl mb-3 block">
+                  <motion.span
+                    className="text-3xl mb-3 block"
+                    whileHover={{ rotateY: 360 }}
+                    transition={{ duration: 0.6 }}
+                  >
                     {skill.icon.length <= 3 ? (
                       <span className="font-mono font-bold text-2xl text-primary">
                         {skill.icon}
@@ -108,7 +95,7 @@ const Skills = () => {
                     ) : (
                       skill.icon
                     )}
-                  </span>
+                  </motion.span>
                   <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">
                     {skill.name}
                   </span>
@@ -121,12 +108,12 @@ const Skills = () => {
         {/* Soft skill */}
         <motion.div
           className="mt-8 flex justify-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          initial={{ opacity: 0, y: 30, scale: 0.9 }}
+          animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
           transition={{ delay: 0.8, duration: 0.6 }}
         >
           <motion.div
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.02, y: -3 }}
             className="hoverable glass-soft frosted-border rounded-full px-6 py-3 flex items-center gap-3"
           >
             <Users className="w-5 h-5 text-primary" />
