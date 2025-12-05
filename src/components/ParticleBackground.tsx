@@ -6,10 +6,14 @@ interface Particle {
   vx: number;
   vy: number;
   size: number;
+  baseOpacity: number;
   opacity: number;
   isTeal: boolean;
   wobbleSpeed: number;
   wobbleOffset: number;
+  twinkle: boolean;
+  twinkleSpeed: number;
+  twinkleOffset: number;
 }
 
 const ParticleBackground = () => {
@@ -36,16 +40,21 @@ const ParticleBackground = () => {
       const particleCount = Math.floor((canvas.width * canvas.height) / 12000);
       
       for (let i = 0; i < particleCount; i++) {
+        const baseOpacity = Math.random() * 0.35 + 0.1;
         particles.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           vx: 0,
-          vy: Math.random() * 0.3 + 0.1, // Slow downward drift
+          vy: Math.random() * 0.3 + 0.1,
           size: Math.random() * 2 + 0.5,
-          opacity: Math.random() * 0.35 + 0.1,
-          isTeal: Math.random() > 0.75, // 25% teal accent
+          baseOpacity,
+          opacity: baseOpacity,
+          isTeal: Math.random() > 0.75,
           wobbleSpeed: Math.random() * 0.02 + 0.01,
           wobbleOffset: Math.random() * Math.PI * 2,
+          twinkle: Math.random() > 0.6, // 40% of particles twinkle
+          twinkleSpeed: Math.random() * 0.05 + 0.02,
+          twinkleOffset: Math.random() * Math.PI * 2,
         });
       }
     };
@@ -61,6 +70,12 @@ const ParticleBackground = () => {
         // Update position - falling down with wobble
         particle.x += wobble + particle.vx;
         particle.y += particle.vy;
+
+        // Twinkle effect - pulsing opacity
+        if (particle.twinkle) {
+          const twinkleValue = Math.sin(timeRef.current * particle.twinkleSpeed + particle.twinkleOffset);
+          particle.opacity = particle.baseOpacity * (0.4 + 0.6 * (twinkleValue * 0.5 + 0.5));
+        }
 
         // Mouse interaction - gentle push away
         const dx = mousePos.current.x - particle.x;
