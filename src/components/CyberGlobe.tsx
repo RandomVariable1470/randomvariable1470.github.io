@@ -1,13 +1,9 @@
 import { useRef, useMemo, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Html, useTexture } from "@react-three/drei";
+import { OrbitControls, Html, Line } from "@react-three/drei";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "framer-motion";
 import React from "react";
-
-// Local textures
-import earthTextureUrl from "@/assets/earth-blue-marble.jpg";
-import bumpTextureUrl from "@/assets/earth-topology.png";
 
 // Convert lat/lng to 3D position on sphere
 const latLngToVector3 = (lat: number, lng: number, radius: number) => {
@@ -23,20 +19,87 @@ const latLngToVector3 = (lat: number, lng: number, radius: number) => {
 // New Delhi coordinates
 const NEW_DELHI = { lat: 28.6139, lng: 77.209 };
 
-const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
-  const earthRef = useRef<THREE.Mesh>(null);
+// Major city coordinates for city lights effect
+const MAJOR_CITIES = [
+  { lat: 40.7128, lng: -74.006 },
+  { lat: 51.5074, lng: -0.1278 },
+  { lat: 35.6762, lng: 139.6503 },
+  { lat: 48.8566, lng: 2.3522 },
+  { lat: -33.8688, lng: 151.2093 },
+  { lat: 55.7558, lng: 37.6173 },
+  { lat: 39.9042, lng: 116.4074 },
+  { lat: -23.5505, lng: -46.6333 },
+  { lat: 19.4326, lng: -99.1332 },
+  { lat: 1.3521, lng: 103.8198 },
+  { lat: 25.2048, lng: 55.2708 },
+  { lat: 37.5665, lng: 126.978 },
+  { lat: 52.52, lng: 13.405 },
+  { lat: 41.9028, lng: 12.4964 },
+  { lat: 34.0522, lng: -118.2437 },
+  { lat: 22.3193, lng: 114.1694 },
+  { lat: 19.076, lng: 72.8777 },
+  { lat: 13.7563, lng: 100.5018 },
+  { lat: -34.6037, lng: -58.3816 },
+  { lat: 31.2304, lng: 121.4737 },
+  { lat: 6.5244, lng: 3.3792 },
+  { lat: -1.2921, lng: 36.8219 },
+  { lat: 35.6895, lng: 51.389 },
+  { lat: 41.0082, lng: 28.9784 },
+  { lat: 28.6139, lng: 77.209 },
+];
+
+const CyberEarth = ({ isZoomed }: { isZoomed: boolean }) => {
+  const globeRef = useRef<THREE.Group>(null);
   const particlesRef = useRef<THREE.Points>(null);
+  const cityLightsRef = useRef<THREE.Points>(null);
 
-  // Load local textures
-  const [earthTexture, bumpTexture] = useTexture([earthTextureUrl, bumpTextureUrl]);
+  // Create continent particle positions
+  const continentParticles = useMemo(() => {
+    const positions: number[] = [];
+    const count = 800;
+    
+    for (let i = 0; i < count; i++) {
+      const lat = (Math.random() - 0.5) * 140;
+      const lng = (Math.random() - 0.5) * 360;
+      
+      const isLand = 
+        (lat > 15 && lat < 70 && lng > -170 && lng < -50) ||
+        (lat > -60 && lat < 15 && lng > -85 && lng < -30) ||
+        (lat > 35 && lat < 72 && lng > -10 && lng < 60) ||
+        (lat > -35 && lat < 37 && lng > -20 && lng < 55) ||
+        (lat > 5 && lat < 75 && lng > 60 && lng < 150) ||
+        (lat > -45 && lat < -10 && lng > 110 && lng < 155) ||
+        (lat > 5 && lat < 35 && lng > 65 && lng < 95);
+      
+      if (isLand && Math.random() > 0.3) {
+        const pos = latLngToVector3(lat, lng, 2.01);
+        positions.push(pos.x, pos.y, pos.z);
+      }
+    }
+    return new Float32Array(positions);
+  }, []);
 
-  // Create particle positions for atmosphere effect
-  const particlePositions = useMemo(() => {
-    const positions = new Float32Array(300 * 3);
-    for (let i = 0; i < 300; i++) {
+  // Create city lights positions
+  const cityLightsPositions = useMemo(() => {
+    const positions: number[] = [];
+    MAJOR_CITIES.forEach(city => {
+      for (let i = 0; i < 5; i++) {
+        const offsetLat = city.lat + (Math.random() - 0.5) * 3;
+        const offsetLng = city.lng + (Math.random() - 0.5) * 3;
+        const pos = latLngToVector3(offsetLat, offsetLng, 2.02);
+        positions.push(pos.x, pos.y, pos.z);
+      }
+    });
+    return new Float32Array(positions);
+  }, []);
+
+  // Floating atmosphere particles
+  const atmosphereParticles = useMemo(() => {
+    const positions = new Float32Array(400 * 3);
+    for (let i = 0; i < 400; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
-      const radius = 2.2 + Math.random() * 0.3;
+      const radius = 2.3 + Math.random() * 0.5;
       positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = radius * Math.cos(phi);
       positions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
@@ -44,39 +107,157 @@ const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
     return positions;
   }, []);
 
-  useFrame(() => {
-    if (earthRef.current && !isZoomed) {
-      earthRef.current.rotation.y += 0.001;
+  // Create equator line points
+  const equatorPoints = useMemo((): [number, number, number][] => {
+    const points: [number, number, number][] = [];
+    for (let i = 0; i <= 64; i++) {
+      const theta = (i / 64) * Math.PI * 2;
+      points.push([2.03 * Math.cos(theta), 0, 2.03 * Math.sin(theta)]);
     }
+    return points;
+  }, []);
+
+  // Create latitude lines
+  const latitudeLines = useMemo((): [number, number, number][][] => {
+    const lines: [number, number, number][][] = [];
+    [-60, -30, 30, 60].forEach(lat => {
+      const points: [number, number, number][] = [];
+      const r = 2.03 * Math.cos(lat * Math.PI / 180);
+      const y = 2.03 * Math.sin(lat * Math.PI / 180);
+      for (let i = 0; i <= 64; i++) {
+        const theta = (i / 64) * Math.PI * 2;
+        points.push([r * Math.cos(theta), y, r * Math.sin(theta)]);
+      }
+      lines.push(points);
+    });
+    return lines;
+  }, []);
+
+  // Create longitude lines
+  const longitudeLines = useMemo((): [number, number, number][][] => {
+    const lines: [number, number, number][][] = [];
+    for (let lng = 0; lng < 360; lng += 30) {
+      const points: [number, number, number][] = [];
+      for (let lat = -90; lat <= 90; lat += 5) {
+        const pos = latLngToVector3(lat, lng, 2.03);
+        points.push([pos.x, pos.y, pos.z]);
+      }
+      lines.push(points);
+    }
+    return lines;
+  }, []);
+
+  useFrame((state) => {
+    const time = state.clock.elapsedTime;
+    
+    if (globeRef.current && !isZoomed) {
+      globeRef.current.rotation.y += 0.002;
+    }
+    
     if (particlesRef.current) {
-      particlesRef.current.rotation.y += 0.0005;
+      particlesRef.current.rotation.y += 0.0008;
+    }
+
+    if (cityLightsRef.current) {
+      const material = cityLightsRef.current.material as THREE.PointsMaterial;
+      material.opacity = 0.6 + Math.sin(time * 2) * 0.3;
     }
   });
 
-  const delhiPosition = latLngToVector3(NEW_DELHI.lat, NEW_DELHI.lng, 2.05);
+  const delhiPosition = latLngToVector3(NEW_DELHI.lat, NEW_DELHI.lng, 2.08);
 
   return (
-    <group>
-      {/* Main Earth sphere */}
-      <mesh ref={earthRef}>
-        <sphereGeometry args={[2, 64, 64]} />
-        <meshPhongMaterial
-          map={earthTexture}
-          bumpMap={bumpTexture}
-          bumpScale={0.05}
-          specular={new THREE.Color('#2dd4bf')}
-          shininess={5}
-        />
+    <group ref={globeRef}>
+      {/* Core dark sphere */}
+      <mesh>
+        <sphereGeometry args={[1.98, 64, 64]} />
+        <meshBasicMaterial color="#0a0a0f" transparent opacity={0.95} />
       </mesh>
 
-      {/* Atmosphere glow */}
-      <mesh scale={1.15}>
+      {/* Inner glow sphere */}
+      <mesh>
+        <sphereGeometry args={[1.99, 64, 64]} />
+        <meshBasicMaterial color="#0d2d2d" transparent opacity={0.5} />
+      </mesh>
+
+      {/* Primary grid wireframe */}
+      <mesh>
+        <sphereGeometry args={[2, 48, 48]} />
+        <meshBasicMaterial color="#2dd4bf" wireframe transparent opacity={0.15} />
+      </mesh>
+
+      {/* Secondary finer grid */}
+      <mesh>
+        <sphereGeometry args={[2.005, 24, 24]} />
+        <meshBasicMaterial color="#5eead4" wireframe transparent opacity={0.08} />
+      </mesh>
+
+      {/* Equator line - glowing */}
+      <Line points={equatorPoints} color="#2dd4bf" lineWidth={2} transparent opacity={0.8} />
+
+      {/* Latitude lines */}
+      {latitudeLines.map((points, i) => (
+        <Line key={`lat-${i}`} points={points} color="#2dd4bf" lineWidth={1} transparent opacity={0.25} />
+      ))}
+
+      {/* Longitude lines */}
+      {longitudeLines.map((points, i) => (
+        <Line key={`lng-${i}`} points={points} color="#2dd4bf" lineWidth={1} transparent opacity={0.2} />
+      ))}
+
+      {/* Continent particle points */}
+      <points>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[continentParticles, 3]} />
+        </bufferGeometry>
+        <pointsMaterial color="#5eead4" size={0.025} transparent opacity={0.7} sizeAttenuation />
+      </points>
+
+      {/* City lights - glowing dots */}
+      <points ref={cityLightsRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[cityLightsPositions, 3]} />
+        </bufferGeometry>
+        <pointsMaterial color="#ffffff" size={0.04} transparent opacity={0.8} sizeAttenuation />
+      </points>
+
+      {/* Atmosphere glow - outer ring */}
+      <mesh scale={1.12}>
         <sphereGeometry args={[2, 64, 64]} />
         <shaderMaterial
           transparent
           side={THREE.BackSide}
           uniforms={{
             glowColor: { value: new THREE.Color('#2dd4bf') },
+            intensity: { value: 1.2 },
+          }}
+          vertexShader={`
+            varying vec3 vNormal;
+            void main() {
+              vNormal = normalize(normalMatrix * normal);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `}
+          fragmentShader={`
+            varying vec3 vNormal;
+            uniform vec3 glowColor;
+            uniform float intensity;
+            void main() {
+              float glow = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
+              gl_FragColor = vec4(glowColor, glow * intensity * 0.6);
+            }
+          `}
+        />
+      </mesh>
+
+      {/* Inner atmosphere rim light */}
+      <mesh scale={1.05}>
+        <sphereGeometry args={[2, 64, 64]} />
+        <shaderMaterial
+          transparent
+          side={THREE.BackSide}
+          uniforms={{
+            glowColor: { value: new THREE.Color('#5eead4') },
           }}
           vertexShader={`
             varying vec3 vNormal;
@@ -89,80 +270,56 @@ const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
             varying vec3 vNormal;
             uniform vec3 glowColor;
             void main() {
-              float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-              gl_FragColor = vec4(glowColor, intensity * 0.4);
+              float rim = pow(0.5 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0);
+              gl_FragColor = vec4(glowColor, rim * 0.4);
             }
           `}
         />
       </mesh>
 
-      {/* Cyber grid overlay */}
-      <mesh>
-        <sphereGeometry args={[2.01, 32, 32]} />
-        <meshBasicMaterial
-          color="#2dd4bf"
-          wireframe
-          transparent
-          opacity={0.05}
-        />
-      </mesh>
-
-      {/* Floating particles */}
+      {/* Floating atmosphere particles */}
       <points ref={particlesRef}>
         <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[particlePositions, 3]}
-          />
+          <bufferAttribute attach="attributes-position" args={[atmosphereParticles, 3]} />
         </bufferGeometry>
-        <pointsMaterial
-          color="#5eead4"
-          size={0.02}
-          transparent
-          opacity={0.5}
-          sizeAttenuation
-        />
+        <pointsMaterial color="#5eead4" size={0.015} transparent opacity={0.4} sizeAttenuation />
       </points>
 
       {/* New Delhi pin */}
       <group position={delhiPosition}>
-        {/* Pin base */}
         <mesh>
-          <sphereGeometry args={[0.06, 16, 16]} />
-          <meshBasicMaterial color="#2dd4bf" />
+          <sphereGeometry args={[0.08, 16, 16]} />
+          <meshBasicMaterial color="#2dd4bf" transparent opacity={0.9} />
         </mesh>
         
-        {/* Glow effect */}
-        <pointLight color="#2dd4bf" intensity={0.5} distance={0.5} />
-        
-        {/* Pulse rings */}
-        {[0.1, 0.15, 0.2].map((size, i) => (
+        <mesh>
+          <sphereGeometry args={[0.04, 16, 16]} />
+          <meshBasicMaterial color="#ffffff" />
+        </mesh>
+
+        <pointLight color="#2dd4bf" intensity={2} distance={1} />
+
+        {[0.12, 0.18, 0.25, 0.33].map((size, i) => (
           <mesh key={i} rotation={[Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[size, size + 0.015, 32]} />
-            <meshBasicMaterial 
-              color="#2dd4bf" 
-              transparent 
-              opacity={0.4 - i * 0.1} 
-              side={THREE.DoubleSide}
-            />
+            <ringGeometry args={[size, size + 0.02, 32]} />
+            <meshBasicMaterial color="#2dd4bf" transparent opacity={0.5 - i * 0.1} side={THREE.DoubleSide} />
           </mesh>
         ))}
 
-        {/* Pin spike pointing outward */}
-        <mesh position={[0, 0, 0.15]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.03, 0.15, 8]} />
+        <mesh position={[0, 0, 0.18]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.04, 0.2, 8]} />
           <meshBasicMaterial color="#2dd4bf" />
         </mesh>
-        
+
         {isZoomed && (
-          <Html position={[0.3, 0.3, 0]} center>
+          <Html position={[0.4, 0.4, 0]} center>
             <motion.div
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-background/90 backdrop-blur-md border border-primary/30 rounded-lg px-4 py-2 whitespace-nowrap shadow-lg shadow-primary/20"
+              className="bg-background/95 backdrop-blur-md border border-primary/50 rounded-lg px-4 py-3 whitespace-nowrap shadow-lg shadow-primary/30"
             >
               <p className="text-primary font-mono text-sm font-bold">📍 New Delhi, India</p>
-              <p className="text-muted-foreground text-xs">You found Random Variable!</p>
+              <p className="text-muted-foreground text-xs mt-1">You found Random Variable!</p>
             </motion.div>
           </Html>
         )}
@@ -174,11 +331,10 @@ const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
 const LoadingFallback = () => (
   <mesh>
     <sphereGeometry args={[2, 32, 32]} />
-    <meshBasicMaterial color="#1a1a2e" wireframe />
+    <meshBasicMaterial color="#0a1a1a" wireframe />
   </mesh>
 );
 
-// Error boundary for Three.js canvas
 class GlobeErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean }
@@ -198,7 +354,7 @@ class GlobeErrorBoundary extends React.Component<
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full border-2 border-primary/30 flex items-center justify-center">
-              <span className="text-2xl">🌍</span>
+              <span className="text-2xl">🌐</span>
             </div>
             <p className="text-muted-foreground text-sm">Globe loading...</p>
           </div>
@@ -211,6 +367,11 @@ class GlobeErrorBoundary extends React.Component<
 
 const CyberGlobe = () => {
   const [isZoomed, setIsZoomed] = useState(false);
+
+  const zoomedCameraPosition = useMemo(() => {
+    const pos = latLngToVector3(NEW_DELHI.lat, NEW_DELHI.lng, 5);
+    return [pos.x, pos.y, pos.z] as [number, number, number];
+  }, []);
 
   return (
     <section className="relative py-20 overflow-hidden">
@@ -236,40 +397,41 @@ const CyberGlobe = () => {
           className="relative h-[400px] md:h-[500px] cursor-pointer"
           onClick={() => setIsZoomed(!isZoomed)}
         >
-          {/* Glow background */}
+          {/* Enhanced glow background */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+            <div className="w-96 h-96 bg-primary/20 rounded-full blur-[100px]" />
+            <div className="absolute w-64 h-64 bg-primary/30 rounded-full blur-[60px]" />
           </div>
 
           <GlobeErrorBoundary>
             <Canvas
-              camera={{ position: isZoomed ? [0, 1, 4] : [0, 0, 6], fov: 45 }}
+              camera={{ position: isZoomed ? zoomedCameraPosition : [0, 0, 6], fov: 45 }}
               style={{ background: 'transparent' }}
               gl={{ antialias: true, alpha: true }}
             >
-              <ambientLight intensity={0.3} />
-              <directionalLight position={[5, 3, 5]} intensity={1} />
-              <directionalLight position={[-5, -3, -5]} intensity={0.3} color="#2dd4bf" />
-              
+              <ambientLight intensity={0.2} />
+              <pointLight position={[10, 10, 10]} intensity={0.5} color="#ffffff" />
+              <pointLight position={[-10, -10, -10]} intensity={0.3} color="#2dd4bf" />
+
               <React.Suspense fallback={<LoadingFallback />}>
-                <Earth isZoomed={isZoomed} />
+                <CyberEarth isZoomed={isZoomed} />
               </React.Suspense>
-              
+
               <OrbitControls
                 enableZoom={false}
                 enablePan={false}
                 autoRotate={!isZoomed}
-                autoRotateSpeed={0.3}
-                target={isZoomed ? latLngToVector3(NEW_DELHI.lat, NEW_DELHI.lng, 0) : [0, 0, 0]}
+                autoRotateSpeed={0.5}
+                target={[0, 0, 0]}
               />
             </Canvas>
           </GlobeErrorBoundary>
 
-          {/* Corner decorations */}
-          <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-primary/30" />
-          <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-primary/30" />
-          <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-primary/30" />
-          <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-primary/30" />
+          {/* Corner decorations with glow */}
+          <div className="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-primary/50 shadow-[0_0_10px_rgba(45,212,191,0.3)]" />
+          <div className="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-primary/50 shadow-[0_0_10px_rgba(45,212,191,0.3)]" />
+          <div className="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-primary/50 shadow-[0_0_10px_rgba(45,212,191,0.3)]" />
+          <div className="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-primary/50 shadow-[0_0_10px_rgba(45,212,191,0.3)]" />
         </motion.div>
 
         <AnimatePresence>
