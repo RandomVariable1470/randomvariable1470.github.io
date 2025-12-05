@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 import { Sparkles, Brain, Code2 } from "lucide-react";
@@ -6,14 +6,32 @@ import { Sparkles, Brain, Code2 } from "lucide-react";
 const About = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+  const orbY = useTransform(scrollYProgress, [0, 1], [0, -80]);
 
   return (
-    <section id="about" className="py-32 px-6 relative">
-      <div className="max-w-4xl mx-auto" ref={ref}>
+    <section id="about" className="py-32 px-6 relative overflow-hidden">
+      {/* Parallax background orbs */}
+      <motion.div
+        className="absolute -top-40 -right-40 w-80 h-80 bg-accent/8 rounded-full blur-3xl pointer-events-none"
+        style={{ y: orbY }}
+      />
+      <motion.div
+        className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none"
+        style={{ y: backgroundY }}
+      />
+
+      <div className="max-w-4xl mx-auto relative z-10" ref={ref}>
         <motion.div
           initial={{ opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.8, staggerChildren: 0.15 }}
+          transition={{ duration: 0.8 }}
         >
           {/* Section title */}
           <motion.div

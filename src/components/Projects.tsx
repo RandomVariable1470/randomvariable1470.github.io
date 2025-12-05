@@ -1,4 +1,4 @@
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform, useScroll } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 import { ExternalLink, Github, Sparkles } from "lucide-react";
@@ -62,7 +62,7 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
       ref={cardRef}
       initial={{ opacity: 0, y: 60, rotateX: 10 }}
       whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-      transition={{ delay: index * 0.15, duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ delay: index * 0.15, duration: 0.7 }}
       viewport={{ once: true, margin: "-50px" }}
       style={{
         rotateX,
@@ -74,10 +74,8 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
       className="hoverable relative group"
     >
       <div className="glass-soft frosted-border rounded-2xl p-6 md:p-8 h-full relative overflow-hidden transition-all duration-300 group-hover:border-primary/30">
-        {/* Soft gradient background on hover */}
         <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         
-        {/* Subtle shine effect */}
         <motion.div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{
@@ -87,7 +85,6 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
         />
 
         <div className="relative" style={{ transform: "translateZ(50px)" }}>
-          {/* Status badge */}
           <div className="flex justify-between items-start mb-4">
             <motion.span
               initial={{ opacity: 0, x: -20 }}
@@ -108,17 +105,14 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
             </div>
           </div>
 
-          {/* Title */}
           <h3 className="text-xl md:text-2xl font-bold mb-3 group-hover:text-gradient transition-all duration-300">
             {project.title}
           </h3>
 
-          {/* Description */}
           <p className="text-muted-foreground text-sm leading-relaxed mb-6">
             {project.description}
           </p>
 
-          {/* Tags */}
           <div className="flex flex-wrap gap-2">
             {project.tags.map((tag, tagIndex) => (
               <motion.span
@@ -143,10 +137,27 @@ const Projects = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  const orb1Y = useTransform(scrollYProgress, [0, 1], [100, -50]);
+  const orb2Y = useTransform(scrollYProgress, [0, 1], [-50, 100]);
+
   return (
-    <section id="projects" className="py-32 px-6 relative">
-      <div className="max-w-5xl mx-auto" ref={ref}>
-        {/* Section title */}
+    <section id="projects" className="py-32 px-6 relative overflow-hidden">
+      {/* Parallax background orbs */}
+      <motion.div
+        className="absolute -top-20 left-1/4 w-72 h-72 bg-primary/6 rounded-full blur-3xl pointer-events-none"
+        style={{ y: orb1Y }}
+      />
+      <motion.div
+        className="absolute -bottom-20 right-1/4 w-80 h-80 bg-accent/8 rounded-full blur-3xl pointer-events-none"
+        style={{ y: orb2Y }}
+      />
+
+      <div className="max-w-5xl mx-auto relative z-10" ref={ref}>
         <motion.div
           className="flex items-center gap-3 mb-4"
           initial={{ opacity: 0, y: 20 }}
@@ -162,8 +173,8 @@ const Projects = () => {
 
         <motion.div
           className="text-center mb-16"
-          initial={{ opacity: 0, y: 30, filter: "blur(4px)" }}
-          animate={isInView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
           <h3 className="text-3xl md:text-4xl font-bold mb-4">
@@ -175,14 +186,12 @@ const Projects = () => {
           </p>
         </motion.div>
 
-        {/* Projects grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" style={{ perspective: "1000px" }}>
           {projects.map((project, index) => (
             <ProjectCard key={project.title} project={project} index={index} />
           ))}
         </div>
 
-        {/* Coming soon placeholder */}
         <motion.div
           className="mt-8 text-center"
           initial={{ opacity: 0, y: 20 }}

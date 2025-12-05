@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { Github, Gamepad2, Mail, Send, Sparkles } from "lucide-react";
@@ -8,14 +8,32 @@ const Contact = () => {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
 
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  const orb1Y = useTransform(scrollYProgress, [0, 1], [60, -80]);
+  const orb2Y = useTransform(scrollYProgress, [0, 1], [-40, 60]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted:", formData);
   };
 
   return (
-    <section id="contact" className="py-32 px-6 relative">
-      <div className="max-w-4xl mx-auto" ref={ref}>
+    <section id="contact" className="py-32 px-6 relative overflow-hidden">
+      {/* Parallax background orbs */}
+      <motion.div
+        className="absolute -top-20 -left-20 w-80 h-80 bg-primary/6 rounded-full blur-3xl pointer-events-none"
+        style={{ y: orb1Y }}
+      />
+      <motion.div
+        className="absolute -bottom-20 -right-20 w-96 h-96 bg-accent/8 rounded-full blur-3xl pointer-events-none"
+        style={{ y: orb2Y }}
+      />
+
+      <div className="max-w-4xl mx-auto relative z-10" ref={ref}>
         {/* Section title */}
         <motion.div
           className="flex items-center gap-3 mb-4"

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 import { Cpu, Gamepad2, Car, Brain, Palette } from "lucide-react";
@@ -40,15 +40,28 @@ const Timeline = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
-  const lineVariants = {
-    hidden: { scaleY: 0 },
-    visible: { scaleY: 1 },
-  };
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  const orb1Y = useTransform(scrollYProgress, [0, 1], [80, -60]);
+  const orb2Y = useTransform(scrollYProgress, [0, 1], [-40, 100]);
+  const lineScale = useTransform(scrollYProgress, [0, 0.5], [0, 1]);
 
   return (
-    <section id="timeline" className="py-32 px-6 relative">
-      <div className="max-w-4xl mx-auto" ref={ref}>
-        {/* Section title */}
+    <section id="timeline" className="py-32 px-6 relative overflow-hidden">
+      {/* Parallax background orbs */}
+      <motion.div
+        className="absolute top-40 -right-40 w-96 h-96 bg-accent/6 rounded-full blur-3xl pointer-events-none"
+        style={{ y: orb1Y }}
+      />
+      <motion.div
+        className="absolute bottom-40 -left-40 w-80 h-80 bg-primary/8 rounded-full blur-3xl pointer-events-none"
+        style={{ y: orb2Y }}
+      />
+
+      <div className="max-w-4xl mx-auto relative z-10" ref={ref}>
         <motion.div
           className="flex items-center gap-3 mb-4"
           initial={{ opacity: 0, y: 20 }}
@@ -64,8 +77,8 @@ const Timeline = () => {
 
         <motion.div
           className="text-center mb-16"
-          initial={{ opacity: 0, y: 30, filter: "blur(4px)" }}
-          animate={isInView ? { opacity: 1, y: 0, filter: "blur(0px)" } : {}}
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
           <h3 className="text-3xl md:text-4xl font-bold mb-4">
@@ -81,9 +94,7 @@ const Timeline = () => {
           {/* Animated vertical line */}
           <motion.div
             className="absolute left-8 md:left-1/2 md:-translate-x-px top-0 bottom-0 w-px bg-gradient-to-b from-primary/50 via-accent/30 to-transparent origin-top"
-            variants={lineVariants}
-            initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
+            style={{ scaleY: lineScale }}
           />
 
           {goals.map((goal, index) => (
@@ -94,7 +105,6 @@ const Timeline = () => {
               transition={{
                 delay: index * 0.15,
                 duration: 0.6,
-                ease: [0.25, 0.1, 0.25, 1],
               }}
               viewport={{ once: true, margin: "-50px" }}
               className={`relative flex items-start gap-6 mb-12 ${
