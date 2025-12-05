@@ -74,12 +74,12 @@ const Hero = () => {
 
         {/* Tagline with typing animation */}
         <motion.div
-          className="text-lg md:text-xl mb-4 font-light tracking-wide h-8 flex items-center justify-center"
+          className="text-lg md:text-xl mb-4 font-light tracking-wide h-8 flex items-center justify-center gap-1"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.8 }}
         >
-          <span className="text-muted-foreground">I'm a </span>
+          <span className="text-muted-foreground">I'm a</span>
           <TypingAnimation 
             words={roles} 
             typingSpeed={80} 
