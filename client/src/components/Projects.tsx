@@ -3,30 +3,17 @@ import { useInView } from "framer-motion";
 import { useRef } from "react";
 import { ExternalLink, Github, Sparkles } from "lucide-react";
 
-const projects = [
-  {
-    title: "Game Engine",
-    description: "A custom 2D/3D game engine built from scratch. Because why use Unity when you can suffer?",
-    tags: ["C++", "OpenGL", "Physics"],
-    status: "In Progress",
-  },
-  {
-    title: "Physics Simulation",
-    description: "Real-time fluid dynamics and particle systems. Very satisfying to watch, painful to debug.",
-    tags: ["Rust", "WGPU", "Math"],
-    status: "Concept",
-  },
-  {
-    title: "Multiplayer Game",
-    description: "Fast-paced multiplayer racing game. Currently just cubes racing, but it's a start.",
-    tags: ["Unity", "C#", "Networking"],
-    status: "In Progress",
-  },
-];
+import { api } from "@/services/api";
+import { useState, useEffect } from "react";
 
-const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: number }) => {
+// ... (keep imports)
+
+// Remove local projects array
+
+const ProjectCard = ({ project, index }: { project: any; index: number }) => {
+  // ... (keep ProjectCard implementation mostly same, just update type if needed)
   const cardRef = useRef<HTMLDivElement>(null);
-  
+
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -71,11 +58,11 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
       }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className="hoverable relative group"
+      className="hoverable relative group h-full"
     >
-      <div className="glass-soft frosted-border rounded-2xl p-6 md:p-8 h-full relative overflow-hidden transition-all duration-300 group-hover:border-primary/30">
+      <div className="glass-soft frosted-border rounded-2xl p-6 md:p-8 h-full relative overflow-hidden transition-all duration-300 group-hover:border-primary/30 flex flex-col">
         <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
+
         <motion.div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
           style={{
@@ -84,7 +71,7 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
           }}
         />
 
-        <div className="relative" style={{ transform: "translateZ(50px)" }}>
+        <div className="relative flex flex-col flex-grow" style={{ transform: "translateZ(50px)" }}>
           <div className="flex justify-between items-start mb-4">
             <motion.span
               initial={{ opacity: 0, x: -20 }}
@@ -99,9 +86,11 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
               <button className="p-2 rounded-lg bg-card/50 hover:bg-card/80 transition-colors frosted-border">
                 <Github className="w-4 h-4" />
               </button>
-              <button className="p-2 rounded-lg bg-card/50 hover:bg-card/80 transition-colors frosted-border">
-                <ExternalLink className="w-4 h-4" />
-              </button>
+              {project.link && (
+                <a href={project.link} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-card/50 hover:bg-card/80 transition-colors frosted-border inline-block">
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
             </div>
           </div>
 
@@ -109,12 +98,12 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
             {project.title}
           </h3>
 
-          <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-6 flex-grow">
             {project.description}
           </p>
 
-          <div className="flex flex-wrap gap-2">
-            {project.tags.map((tag, tagIndex) => (
+          <div className="flex flex-wrap gap-2 mt-auto">
+            {project.tags.map((tag: string, tagIndex: number) => (
               <motion.span
                 key={tag}
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -134,8 +123,13 @@ const ProjectCard = ({ project, index }: { project: typeof projects[0]; index: n
 };
 
 const Projects = () => {
+  const [projects, setProjects] = useState<any[]>([]);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  useEffect(() => {
+    api.getProjects().then(setProjects).catch(console.error);
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -188,7 +182,7 @@ const Projects = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" style={{ perspective: "1000px" }}>
           {projects.map((project, index) => (
-            <ProjectCard key={project.title} project={project} index={index} />
+            <ProjectCard key={project._id || project.title} project={project} index={index} />
           ))}
         </div>
 

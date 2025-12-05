@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import connectDB from './db.js';
 import contactRoutes from './routes/contact.js';
 import githubRoutes from './routes/github.js';
+import authRoutes from './routes/auth.js';
+import projectRoutes from './routes/projects.js';
 
 dotenv.config();
 
@@ -18,8 +20,11 @@ app.use(express.json());
 connectDB();
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/github', githubRoutes);
+app.use('/api/projects', projectRoutes);
+
 
 app.get('/', (req, res) => {
     res.send('Portfolio API is running...');
