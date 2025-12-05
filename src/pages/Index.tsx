@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ParticleBackground from "@/components/ParticleBackground";
 import InteractiveCursor from "@/components/InteractiveCursor";
 import LoadingScreen from "@/components/LoadingScreen";
+import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Skills from "@/components/Skills";
@@ -54,6 +55,9 @@ const Index = () => {
 
       {/* Konami code handler */}
       <KonamiCode onActivate={handleKonamiActivate} />
+
+      {/* Navigation */}
+      <Navbar />
 
       {/* Main content */}
       <main className="relative z-10">

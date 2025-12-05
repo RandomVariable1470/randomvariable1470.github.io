@@ -18,7 +18,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 bg-premium vignette">
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 bg-premium vignette">
       <div className="relative z-10 text-center max-w-4xl mx-auto">
         {/* Location Pin */}
         <motion.div
