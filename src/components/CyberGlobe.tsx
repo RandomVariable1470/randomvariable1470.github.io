@@ -21,32 +21,73 @@ const NEW_DELHI = { lat: 28.6139, lng: 77.209 };
 
 // Major city coordinates for city lights effect
 const MAJOR_CITIES = [
-  { lat: 40.7128, lng: -74.006 },
-  { lat: 51.5074, lng: -0.1278 },
-  { lat: 35.6762, lng: 139.6503 },
-  { lat: 48.8566, lng: 2.3522 },
-  { lat: -33.8688, lng: 151.2093 },
-  { lat: 55.7558, lng: 37.6173 },
-  { lat: 39.9042, lng: 116.4074 },
-  { lat: -23.5505, lng: -46.6333 },
-  { lat: 19.4326, lng: -99.1332 },
-  { lat: 1.3521, lng: 103.8198 },
-  { lat: 25.2048, lng: 55.2708 },
-  { lat: 37.5665, lng: 126.978 },
-  { lat: 52.52, lng: 13.405 },
-  { lat: 41.9028, lng: 12.4964 },
-  { lat: 34.0522, lng: -118.2437 },
-  { lat: 22.3193, lng: 114.1694 },
-  { lat: 19.076, lng: 72.8777 },
-  { lat: 13.7563, lng: 100.5018 },
-  { lat: -34.6037, lng: -58.3816 },
-  { lat: 31.2304, lng: 121.4737 },
-  { lat: 6.5244, lng: 3.3792 },
-  { lat: -1.2921, lng: 36.8219 },
-  { lat: 35.6895, lng: 51.389 },
-  { lat: 41.0082, lng: 28.9784 },
-  { lat: 28.6139, lng: 77.209 },
+  { lat: 40.7128, lng: -74.006, name: "New York" },
+  { lat: 51.5074, lng: -0.1278, name: "London" },
+  { lat: 35.6762, lng: 139.6503, name: "Tokyo" },
+  { lat: 48.8566, lng: 2.3522, name: "Paris" },
+  { lat: -33.8688, lng: 151.2093, name: "Sydney" },
+  { lat: 55.7558, lng: 37.6173, name: "Moscow" },
+  { lat: 39.9042, lng: 116.4074, name: "Beijing" },
+  { lat: -23.5505, lng: -46.6333, name: "São Paulo" },
+  { lat: 19.4326, lng: -99.1332, name: "Mexico City" },
+  { lat: 1.3521, lng: 103.8198, name: "Singapore" },
+  { lat: 25.2048, lng: 55.2708, name: "Dubai" },
+  { lat: 37.5665, lng: 126.978, name: "Seoul" },
+  { lat: 52.52, lng: 13.405, name: "Berlin" },
+  { lat: 34.0522, lng: -118.2437, name: "Los Angeles" },
+  { lat: 22.3193, lng: 114.1694, name: "Hong Kong" },
+  { lat: 19.076, lng: 72.8777, name: "Mumbai" },
+  { lat: 28.6139, lng: 77.209, name: "New Delhi" },
 ];
+
+// Network connections between major hubs
+const NETWORK_CONNECTIONS: [number, number][] = [
+  [16, 15], // New Delhi - Mumbai
+  [16, 2],  // New Delhi - Tokyo
+  [16, 1],  // New Delhi - London
+  [16, 10], // New Delhi - Dubai
+  [16, 9],  // New Delhi - Singapore
+  [0, 1],   // New York - London
+  [0, 13],  // New York - Los Angeles
+  [0, 7],   // New York - São Paulo
+  [1, 3],   // London - Paris
+  [1, 12],  // London - Berlin
+  [1, 10],  // London - Dubai
+  [2, 11],  // Tokyo - Seoul
+  [2, 6],   // Tokyo - Beijing
+  [2, 14],  // Tokyo - Hong Kong
+  [4, 9],   // Sydney - Singapore
+  [6, 14],  // Beijing - Hong Kong
+  [9, 10],  // Singapore - Dubai
+  [5, 12],  // Moscow - Berlin
+];
+
+// Generate arc points between two positions on sphere
+const generateArcPoints = (
+  start: { lat: number; lng: number },
+  end: { lat: number; lng: number },
+  radius: number,
+  segments: number = 50
+): [number, number, number][] => {
+  const startVec = latLngToVector3(start.lat, start.lng, radius);
+  const endVec = latLngToVector3(end.lat, end.lng, radius);
+  
+  const points: [number, number, number][] = [];
+  
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    // Interpolate between start and end
+    const point = new THREE.Vector3().lerpVectors(startVec, endVec, t);
+    // Normalize and push outward for arc effect
+    point.normalize();
+    // Calculate arc height - higher in the middle
+    const arcHeight = Math.sin(t * Math.PI) * 0.3;
+    point.multiplyScalar(radius + arcHeight);
+    points.push([point.x, point.y, point.z]);
+  }
+  
+  return points;
+};
 
 const CyberEarth = ({ isZoomed }: { isZoomed: boolean }) => {
   const globeRef = useRef<THREE.Group>(null);
@@ -91,6 +132,15 @@ const CyberEarth = ({ isZoomed }: { isZoomed: boolean }) => {
       }
     });
     return new Float32Array(positions);
+  }, []);
+
+  // Generate network arc lines
+  const networkArcs = useMemo(() => {
+    return NETWORK_CONNECTIONS.map(([startIdx, endIdx]) => {
+      const start = MAJOR_CITIES[startIdx];
+      const end = MAJOR_CITIES[endIdx];
+      return generateArcPoints(start, end, 2.02);
+    });
   }, []);
 
   // Floating atmosphere particles
@@ -220,6 +270,29 @@ const CyberEarth = ({ isZoomed }: { isZoomed: boolean }) => {
         </bufferGeometry>
         <pointsMaterial color="#ffffff" size={0.04} transparent opacity={0.8} sizeAttenuation />
       </points>
+
+      {/* Network connection arcs */}
+      {networkArcs.map((arcPoints, i) => (
+        <Line
+          key={`arc-${i}`}
+          points={arcPoints}
+          color="#2dd4bf"
+          lineWidth={1}
+          transparent
+          opacity={0.4}
+        />
+      ))}
+
+      {/* City hub markers */}
+      {MAJOR_CITIES.map((city, i) => {
+        const pos = latLngToVector3(city.lat, city.lng, 2.03);
+        return (
+          <mesh key={`hub-${i}`} position={[pos.x, pos.y, pos.z]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshBasicMaterial color="#5eead4" transparent opacity={0.9} />
+          </mesh>
+        );
+      })}
 
       {/* Atmosphere glow - outer ring */}
       <mesh scale={1.12}>
