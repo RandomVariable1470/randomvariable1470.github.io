@@ -1,22 +1,23 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
-import { useRef, useState } from "react";
-import { Github, GitCommit, GitPullRequest, Star, Zap } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import { Github, GitCommit, GitPullRequest, Star, Zap, Users, FolderOpen } from "lucide-react";
+import { api } from "@/services/api";
 
-// Mock contribution data (52 weeks x 7 days)
+// Use a simplified contributions visual for now or keep mock if API doesn't provide it easily. 
+// We will keep the mock generation for the visual effect but update other stats.
 const generateContributions = () => {
   const data: number[][] = [];
   for (let week = 0; week < 52; week++) {
     const weekData: number[] = [];
     for (let day = 0; day < 7; day++) {
-      // Create realistic patterns with some busy weeks
       const baseChance = Math.random();
       const isBusyWeek = week % 8 < 3;
       const contribution = isBusyWeek
         ? Math.floor(Math.random() * 8)
         : baseChance > 0.4
-        ? Math.floor(Math.random() * 4)
-        : 0;
+          ? Math.floor(Math.random() * 4)
+          : 0;
       weekData.push(contribution);
     }
     data.push(weekData);
@@ -34,24 +35,46 @@ const getContributionColor = (count: number) => {
   return "bg-primary";
 };
 
-const stats = [
-  { label: "Total Commits", value: "847", icon: GitCommit, subtext: "Green pixels of glory" },
-  { label: "Pull Requests", value: "42", icon: GitPullRequest, subtext: "Merge conflicts survived" },
-  { label: "Repos Starred", value: "156", icon: Star, subtext: "Digital bookmarks" },
-  { label: "Streak Days", value: "23", icon: Zap, subtext: "Current momentum" },
-];
-
-const recentActivity = [
-  { type: "commit", message: "fix: resolved quantum entanglement bug", time: "2h ago", repo: "physics-sim" },
-  { type: "commit", message: "feat: added gravity to falling objects", time: "5h ago", repo: "game-engine" },
-  { type: "pr", message: "Implement particle collision system", time: "1d ago", repo: "physics-sim" },
-  { type: "commit", message: "docs: updated README with existential crisis", time: "2d ago", repo: "random-scripts" },
-];
-
 const GithubActivity = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [hoveredCell, setHoveredCell] = useState<{ week: number; day: number } | null>(null);
+
+  const [stats, setStats] = useState([
+    { label: "Public Repos", value: "--", icon: FolderOpen, subtext: "Source code" },
+    { label: "Followers", value: "--", icon: Users, subtext: "Community" },
+    { label: "Following", value: "--", icon: Users, subtext: "Network" },
+    { label: "Total Commits", value: "800+", icon: GitCommit, subtext: "Estimated" },
+  ]);
+
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const profile = await api.getGitHubProfile();
+        setStats([
+          { label: "Public Repos", value: String(profile.public_repos), icon: FolderOpen, subtext: "Source code" },
+          { label: "Followers", value: String(profile.followers), icon: Users, subtext: "Community" },
+          { label: "Following", value: String(profile.following), icon: Users, subtext: "Network" },
+          { label: "Joined", value: new Date(profile.created_at).getFullYear().toString(), icon: Star, subtext: "Veteran" },
+        ]);
+
+        const repos = await api.getGitHubRepos();
+        // Transform repos to activity for display
+        const activity = repos.slice(0, 4).map((repo: any) => ({
+          type: "commit", // using repo update mostly
+          message: `Updated ${repo.name}`,
+          time: new Date(repo.updated_at).toLocaleDateString(),
+          repo: repo.language || "Code"
+        }));
+        setRecentActivity(activity);
+      } catch (e) {
+        console.error("Failed to fetch GitHub data", e);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <section ref={ref} className="relative py-20 overflow-hidden">
@@ -82,7 +105,7 @@ const GithubActivity = () => {
               </div>
               <div>
                 <h3 className="font-semibold">Contribution Graph</h3>
-                <p className="text-xs text-muted-foreground font-mono">847 contributions in the last year</p>
+                <p className="text-xs text-muted-foreground font-mono">Visualized activity (Mock)</p>
               </div>
             </div>
 
@@ -176,11 +199,11 @@ const GithubActivity = () => {
         >
           <h3 className="font-semibold mb-4 flex items-center gap-2">
             <Zap className="w-4 h-4 text-primary" />
-            Recent Activity
-            <span className="text-xs text-muted-foreground font-mono ml-2">// live feed</span>
+            Recent Updates
+            <span className="text-xs text-muted-foreground font-mono ml-2">// GitHub Repos</span>
           </h3>
           <div className="space-y-3">
-            {recentActivity.map((activity, index) => (
+            {recentActivity.length > 0 ? recentActivity.map((activity, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -10 }}
@@ -198,7 +221,7 @@ const GithubActivity = () => {
                   {activity.repo}
                 </span>
               </motion.div>
-            ))}
+            )) : <p className="text-sm text-muted-foreground">Loading activity...</p>}
           </div>
         </motion.div>
 
@@ -209,7 +232,7 @@ const GithubActivity = () => {
           transition={{ delay: 0.8 }}
           className="text-center text-xs text-muted-foreground/40 font-mono mt-6"
         >
-          * Stats may or may not be accurate. Bug-to-feature conversion rate: 99.9%
+          * Activity visuals are simulated. Stats are real from GitHub.
         </motion.p>
       </div>
     </section>

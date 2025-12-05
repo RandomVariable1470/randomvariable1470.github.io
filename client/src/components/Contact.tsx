@@ -2,11 +2,16 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { Github, Gamepad2, Mail, Send, Sparkles } from "lucide-react";
+import { api } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -16,9 +21,25 @@ const Contact = () => {
   const orb1Y = useTransform(scrollYProgress, [0, 1], [60, -80]);
   const orb2Y = useTransform(scrollYProgress, [0, 1], [-40, 60]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setIsSubmitting(true);
+    try {
+      await api.contact(formData);
+      toast({
+        title: "Message sent!",
+        description: "Thanks for reaching out. I'll get back to you soon.",
+      });
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Something went wrong. Please try again later.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -82,10 +103,12 @@ const Contact = () => {
                 </label>
                 <input
                   type="text"
+                  required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl bg-card/50 frosted-border focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
                   placeholder="Your name"
+                  disabled={isSubmitting}
                 />
               </motion.div>
 
@@ -99,10 +122,12 @@ const Contact = () => {
                 </label>
                 <input
                   type="email"
+                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl bg-card/50 frosted-border focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
                   placeholder="your@email.com"
+                  disabled={isSubmitting}
                 />
               </motion.div>
 
@@ -116,24 +141,27 @@ const Contact = () => {
                 </label>
                 <textarea
                   value={formData.message}
+                  required
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   rows={4}
                   className="w-full px-4 py-3 rounded-xl bg-card/50 frosted-border focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm resize-none"
                   placeholder="Tell me about your project..."
+                  disabled={isSubmitting}
                 />
               </motion.div>
 
               <motion.button
                 type="submit"
+                disabled={isSubmitting}
                 initial={{ opacity: 0, y: 20 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ delay: 0.8 }}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
-                className="hoverable w-full py-3 px-6 rounded-xl bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 hover:glow-soft transition-all duration-300"
+                className="hoverable w-full py-3 px-6 rounded-xl bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 hover:glow-soft transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4" />
-                Send Message
+                {isSubmitting ? "Sending..." : "Send Message"}
               </motion.button>
             </div>
           </motion.form>
@@ -151,7 +179,7 @@ const Contact = () => {
                 <Sparkles className="w-4 h-4 text-primary" />
                 Quick Links
               </h4>
-              
+
               <div className="space-y-3">
                 {[
                   { href: "mailto:hello@randomvariable.dev", icon: Mail, label: "Email", value: "hello@randomvariable.dev" },
