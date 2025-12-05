@@ -7,6 +7,7 @@ interface Particle {
   vy: number;
   size: number;
   opacity: number;
+  isTeal: boolean;
 }
 
 const ParticleBackground = () => {
@@ -29,16 +30,17 @@ const ParticleBackground = () => {
 
     const initParticles = () => {
       particles.current = [];
-      const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
+      const particleCount = Math.floor((canvas.width * canvas.height) / 18000);
       
       for (let i = 0; i < particleCount; i++) {
         particles.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          size: Math.random() * 2 + 1,
-          opacity: Math.random() * 0.5 + 0.2,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 1.5 + 0.5,
+          opacity: Math.random() * 0.4 + 0.1,
+          isTeal: Math.random() > 0.7, // 30% teal accent particles
         });
       }
     };
@@ -56,33 +58,39 @@ const ParticleBackground = () => {
         const dy = mousePos.current.y - particle.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        if (dist < 150) {
-          const force = (150 - dist) / 150;
-          particle.vx -= (dx / dist) * force * 0.02;
-          particle.vy -= (dy / dist) * force * 0.02;
+        if (dist < 120) {
+          const force = (120 - dist) / 120;
+          particle.vx -= (dx / dist) * force * 0.015;
+          particle.vy -= (dy / dist) * force * 0.015;
         }
 
         // Boundary check
         if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
         if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
 
-        // Draw particle
+        // Draw particle with soft white or teal tint
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(160, 100%, 60%, ${particle.opacity})`;
+        
+        if (particle.isTeal) {
+          ctx.fillStyle = `hsla(185, 35%, 65%, ${particle.opacity * 0.8})`;
+        } else {
+          ctx.fillStyle = `hsla(0, 0%, 85%, ${particle.opacity})`;
+        }
         ctx.fill();
 
-        // Draw connections
+        // Draw connections with soft white/grey lines
         particles.current.slice(i + 1).forEach((otherParticle) => {
           const dx = particle.x - otherParticle.x;
           const dy = particle.y - otherParticle.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 120) {
+          if (distance < 100) {
             ctx.beginPath();
             ctx.moveTo(particle.x, particle.y);
             ctx.lineTo(otherParticle.x, otherParticle.y);
-            ctx.strokeStyle = `hsla(160, 100%, 60%, ${0.1 * (1 - distance / 120)})`;
+            const lineOpacity = 0.06 * (1 - distance / 100);
+            ctx.strokeStyle = `hsla(0, 0%, 80%, ${lineOpacity})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }

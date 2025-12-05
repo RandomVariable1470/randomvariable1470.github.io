@@ -18,31 +18,31 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6">
-      {/* Floating math symbols */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 bg-premium vignette">
+      {/* Floating math symbols - soft white/grey with teal hints */}
       <motion.div
-        className="absolute top-20 left-[15%] text-primary/20 text-4xl font-mono"
+        className="absolute top-20 left-[15%] text-foreground/10 text-4xl font-mono"
         animate={{ y: [0, -20, 0], rotate: [0, 10, 0] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       >
         ∑
       </motion.div>
       <motion.div
-        className="absolute top-40 right-[20%] text-primary/15 text-3xl font-mono"
+        className="absolute top-40 right-[20%] text-accent/15 text-3xl font-mono"
         animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       >
         λ
       </motion.div>
       <motion.div
-        className="absolute bottom-40 left-[25%] text-primary/10 text-5xl font-mono"
+        className="absolute bottom-40 left-[25%] text-foreground/8 text-5xl font-mono"
         animate={{ y: [0, -10, 0], rotate: [0, 15, 0] }}
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
       >
         ∫
       </motion.div>
       <motion.div
-        className="absolute bottom-60 right-[15%] text-primary/20 text-2xl font-mono"
+        className="absolute bottom-60 right-[15%] text-accent/12 text-2xl font-mono"
         animate={{ y: [0, 20, 0], rotate: [0, -10, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
       >
@@ -60,9 +60,9 @@ const Hero = () => {
           <LocationPin />
         </motion.div>
 
-        {/* Main Title */}
+        {/* Main Title with soft white halo */}
         <motion.h1
-          className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight"
+          className="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 tracking-tight halo"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
@@ -90,7 +90,7 @@ const Hero = () => {
 
         {/* Real name reveal */}
         <motion.p
-          className="text-sm text-muted-foreground/60 mb-12 font-mono"
+          className="text-sm text-muted-foreground/70 mb-12 font-mono"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
@@ -98,7 +98,7 @@ const Hero = () => {
           Hey, I'm <span className="text-primary">Naman</span> 👋 (but Random Variable sounds cooler)
         </motion.p>
 
-        {/* Social Links */}
+        {/* Social Links - frosted glass style */}
         <motion.div
           className="flex gap-4 justify-center mb-16"
           initial={{ opacity: 0, y: 20 }}
@@ -109,7 +109,7 @@ const Hero = () => {
             href="https://github.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="hoverable group flex items-center gap-2 px-6 py-3 bg-secondary/50 rounded-full border border-border/50 hover:border-primary/50 hover:bg-secondary transition-all duration-300"
+            className="hoverable group flex items-center gap-2 px-6 py-3 glass-soft frosted-border rounded-full hover:bg-secondary/60 transition-all duration-300"
           >
             <Github className="w-5 h-5 group-hover:text-primary transition-colors" />
             <span className="text-sm font-medium">GitHub</span>
@@ -118,7 +118,7 @@ const Hero = () => {
             href="https://itch.io"
             target="_blank"
             rel="noopener noreferrer"
-            className="hoverable group flex items-center gap-2 px-6 py-3 bg-secondary/50 rounded-full border border-border/50 hover:border-primary/50 hover:bg-secondary transition-all duration-300"
+            className="hoverable group flex items-center gap-2 px-6 py-3 glass-soft frosted-border rounded-full hover:bg-secondary/60 transition-all duration-300"
           >
             <Gamepad2 className="w-5 h-5 group-hover:text-primary transition-colors" />
             <span className="text-sm font-medium">itch.io</span>

@@ -41,10 +41,10 @@ const Index = () => {
         <Footer />
       </main>
 
-      {/* Gradient overlays for depth */}
+      {/* Soft gradient overlays for depth - white/teal tints */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full h-96 bg-gradient-to-t from-primary/5 to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-accent/3 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-96 bg-gradient-to-t from-accent/3 to-transparent" />
       </div>
     </div>
   );
