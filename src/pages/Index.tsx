@@ -1,19 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import ParticleBackground from "@/components/ParticleBackground";
 import InteractiveCursor from "@/components/InteractiveCursor";
+import LoadingScreen from "@/components/LoadingScreen";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Skills from "@/components/Skills";
 import Projects from "@/components/Projects";
+import Timeline from "@/components/Timeline";
+import EasterEggsSection from "@/components/EasterEggsSection";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import MathSymbolEasterEggs from "@/components/MathSymbolEasterEggs";
+import AvatarEvolution from "@/components/AvatarEvolution";
+import KonamiCode from "@/components/KonamiCode";
 
 const Index = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [devMode, setDevMode] = useState(false);
+
   useEffect(() => {
-    // Add smooth scroll behavior
     document.documentElement.style.scrollBehavior = "smooth";
-    
-    // Update page title and meta
     document.title = "Random Variable | Game Developer & CS Enthusiast";
     
     return () => {
@@ -21,8 +27,17 @@ const Index = () => {
     };
   }, []);
 
+  const handleKonamiActivate = () => {
+    setDevMode(true);
+    document.documentElement.classList.add("dev-mode");
+  };
+
+  if (isLoading) {
+    return <LoadingScreen onComplete={() => setIsLoading(false)} />;
+  }
+
   return (
-    <div className="relative min-h-screen bg-premium text-foreground overflow-x-hidden">
+    <div className={`relative min-h-screen bg-premium text-foreground overflow-x-hidden ${devMode ? "dev-mode-active" : ""}`}>
       {/* Particle background */}
       <ParticleBackground />
       
@@ -31,12 +46,23 @@ const Index = () => {
         <InteractiveCursor />
       </div>
 
+      {/* Math symbol easter eggs */}
+      <MathSymbolEasterEggs />
+
+      {/* Avatar evolution widget */}
+      <AvatarEvolution />
+
+      {/* Konami code handler */}
+      <KonamiCode onActivate={handleKonamiActivate} />
+
       {/* Main content */}
       <main className="relative z-10">
         <Hero />
         <About />
         <Skills />
         <Projects />
+        <Timeline />
+        <EasterEggsSection />
         <Contact />
         <Footer />
       </main>

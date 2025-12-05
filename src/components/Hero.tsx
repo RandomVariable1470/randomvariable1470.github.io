@@ -19,36 +19,6 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-6 bg-premium vignette">
-      {/* Floating math symbols - soft white/grey with teal hints */}
-      <motion.div
-        className="absolute top-20 left-[15%] text-foreground/10 text-4xl font-mono"
-        animate={{ y: [0, -20, 0], rotate: [0, 10, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      >
-        ∑
-      </motion.div>
-      <motion.div
-        className="absolute top-40 right-[20%] text-accent/15 text-3xl font-mono"
-        animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-      >
-        λ
-      </motion.div>
-      <motion.div
-        className="absolute bottom-40 left-[25%] text-foreground/8 text-5xl font-mono"
-        animate={{ y: [0, -10, 0], rotate: [0, 15, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-      >
-        ∫
-      </motion.div>
-      <motion.div
-        className="absolute bottom-60 right-[15%] text-accent/12 text-2xl font-mono"
-        animate={{ y: [0, 20, 0], rotate: [0, -10, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-      >
-        π
-      </motion.div>
-
       <div className="relative z-10 text-center max-w-4xl mx-auto">
         {/* Location Pin */}
         <motion.div

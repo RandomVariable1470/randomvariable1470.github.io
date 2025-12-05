@@ -9,12 +9,18 @@ interface Particle {
   baseOpacity: number;
   opacity: number;
   isTeal: boolean;
+  isSymbol: boolean;
+  symbol: string;
   wobbleSpeed: number;
   wobbleOffset: number;
   twinkle: boolean;
   twinkleSpeed: number;
   twinkleOffset: number;
+  rotation: number;
+  rotationSpeed: number;
 }
+
+const mathSymbols = ["Σ", "π", "λ", "{}", ";", "∫", "∞", "≈", "∂", "→", "⟨⟩", "//"];
 
 const ParticleBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,24 +43,29 @@ const ParticleBackground = () => {
 
     const initParticles = () => {
       particles.current = [];
-      const particleCount = Math.floor((canvas.width * canvas.height) / 12000);
+      const particleCount = Math.floor((canvas.width * canvas.height) / 10000);
       
       for (let i = 0; i < particleCount; i++) {
         const baseOpacity = Math.random() * 0.35 + 0.1;
+        const isSymbol = Math.random() > 0.85; // 15% are symbols
         particles.current.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           vx: 0,
           vy: Math.random() * 0.3 + 0.1,
-          size: Math.random() * 2 + 0.5,
-          baseOpacity,
+          size: isSymbol ? Math.random() * 10 + 8 : Math.random() * 2 + 0.5,
+          baseOpacity: isSymbol ? baseOpacity * 0.6 : baseOpacity,
           opacity: baseOpacity,
           isTeal: Math.random() > 0.75,
+          isSymbol,
+          symbol: mathSymbols[Math.floor(Math.random() * mathSymbols.length)],
           wobbleSpeed: Math.random() * 0.02 + 0.01,
           wobbleOffset: Math.random() * Math.PI * 2,
-          twinkle: Math.random() > 0.6, // 40% of particles twinkle
+          twinkle: Math.random() > 0.6,
           twinkleSpeed: Math.random() * 0.05 + 0.02,
           twinkleOffset: Math.random() * Math.PI * 2,
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.01,
         });
       }
     };
@@ -64,20 +75,17 @@ const ParticleBackground = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.current.forEach((particle) => {
-        // Gentle wobble side-to-side as they fall
         const wobble = Math.sin(timeRef.current * particle.wobbleSpeed + particle.wobbleOffset) * 0.3;
         
-        // Update position - falling down with wobble
         particle.x += wobble + particle.vx;
         particle.y += particle.vy;
+        particle.rotation += particle.rotationSpeed;
 
-        // Twinkle effect - pulsing opacity
         if (particle.twinkle) {
           const twinkleValue = Math.sin(timeRef.current * particle.twinkleSpeed + particle.twinkleOffset);
           particle.opacity = particle.baseOpacity * (0.4 + 0.6 * (twinkleValue * 0.5 + 0.5));
         }
 
-        // Mouse interaction - gentle push away
         const dx = mousePos.current.x - particle.x;
         const dy = mousePos.current.y - particle.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -88,47 +96,59 @@ const ParticleBackground = () => {
           particle.vy -= (dy / dist) * force * 0.004;
         }
 
-        // Dampen horizontal velocity
         particle.vx *= 0.98;
-        
-        // Keep downward drift consistent
         if (particle.vy < 0.1) particle.vy = 0.1;
         if (particle.vy > 0.5) particle.vy = 0.5;
 
-        // Wrap around edges
-        if (particle.y > canvas.height + 10) {
-          particle.y = -10;
+        if (particle.y > canvas.height + 20) {
+          particle.y = -20;
           particle.x = Math.random() * canvas.width;
         }
-        if (particle.x < -10) particle.x = canvas.width + 10;
-        if (particle.x > canvas.width + 10) particle.x = -10;
+        if (particle.x < -20) particle.x = canvas.width + 20;
+        if (particle.x > canvas.width + 20) particle.x = -20;
 
-        // Draw particle - soft glowing dot
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        
-        if (particle.isTeal) {
-          // Teal accent particles with soft glow
-          const gradient = ctx.createRadialGradient(
-            particle.x, particle.y, 0,
-            particle.x, particle.y, particle.size * 2
-          );
-          gradient.addColorStop(0, `hsla(185, 40%, 70%, ${particle.opacity})`);
-          gradient.addColorStop(1, `hsla(185, 40%, 70%, 0)`);
-          ctx.fillStyle = gradient;
-          ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+        if (particle.isSymbol) {
+          // Draw math/code symbols
+          ctx.save();
+          ctx.translate(particle.x, particle.y);
+          ctx.rotate(particle.rotation);
+          ctx.font = `${particle.size}px "JetBrains Mono", monospace`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          
+          if (particle.isTeal) {
+            ctx.fillStyle = `hsla(185, 40%, 70%, ${particle.opacity})`;
+          } else {
+            ctx.fillStyle = `hsla(0, 0%, 90%, ${particle.opacity})`;
+          }
+          ctx.fillText(particle.symbol, 0, 0);
+          ctx.restore();
         } else {
-          // White particles with soft glow
-          const gradient = ctx.createRadialGradient(
-            particle.x, particle.y, 0,
-            particle.x, particle.y, particle.size * 2
-          );
-          gradient.addColorStop(0, `hsla(0, 0%, 90%, ${particle.opacity})`);
-          gradient.addColorStop(1, `hsla(0, 0%, 90%, 0)`);
-          ctx.fillStyle = gradient;
-          ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+          // Draw regular particles
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+          
+          if (particle.isTeal) {
+            const gradient = ctx.createRadialGradient(
+              particle.x, particle.y, 0,
+              particle.x, particle.y, particle.size * 2
+            );
+            gradient.addColorStop(0, `hsla(185, 40%, 70%, ${particle.opacity})`);
+            gradient.addColorStop(1, `hsla(185, 40%, 70%, 0)`);
+            ctx.fillStyle = gradient;
+            ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+          } else {
+            const gradient = ctx.createRadialGradient(
+              particle.x, particle.y, 0,
+              particle.x, particle.y, particle.size * 2
+            );
+            gradient.addColorStop(0, `hsla(0, 0%, 90%, ${particle.opacity})`);
+            gradient.addColorStop(1, `hsla(0, 0%, 90%, 0)`);
+            ctx.fillStyle = gradient;
+            ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+          }
+          ctx.fill();
         }
-        ctx.fill();
       });
 
       animationRef.current = requestAnimationFrame(animate);
