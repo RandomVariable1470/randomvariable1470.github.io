@@ -1,9 +1,13 @@
-import { useRef, useMemo, useState, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html } from "@react-three/drei";
+import { useRef, useMemo, useState } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Html, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "framer-motion";
 import React from "react";
+
+// Local textures
+import earthTextureUrl from "@/assets/earth-blue-marble.jpg";
+import bumpTextureUrl from "@/assets/earth-topology.png";
 
 // Convert lat/lng to 3D position on sphere
 const latLngToVector3 = (lat: number, lng: number, radius: number) => {
@@ -19,37 +23,12 @@ const latLngToVector3 = (lat: number, lng: number, radius: number) => {
 // New Delhi coordinates
 const NEW_DELHI = { lat: 28.6139, lng: 77.209 };
 
-// Custom hook to load textures with error handling
-const useTexture = (url: string) => {
-  const [texture, setTexture] = useState<THREE.Texture | null>(null);
-  
-  useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      url,
-      (loadedTexture) => {
-        setTexture(loadedTexture);
-      },
-      undefined,
-      () => {
-        // Silently fail - texture won't be used
-        console.warn(`Failed to load texture: ${url}`);
-      }
-    );
-  }, [url]);
-  
-  return texture;
-};
-
 const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
   const earthRef = useRef<THREE.Mesh>(null);
-  const cloudsRef = useRef<THREE.Mesh>(null);
   const particlesRef = useRef<THREE.Points>(null);
 
-  // Load Earth textures with error handling
-  const earthTexture = useTexture('https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg');
-  const bumpTexture = useTexture('https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png');
-  const cloudsTexture = useTexture('https://unpkg.com/three-globe@2.31.0/example/img/earth-clouds.png');
+  // Load local textures
+  const [earthTexture, bumpTexture] = useTexture([earthTextureUrl, bumpTextureUrl]);
 
   // Create particle positions for atmosphere effect
   const particlePositions = useMemo(() => {
@@ -69,9 +48,6 @@ const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
     if (earthRef.current && !isZoomed) {
       earthRef.current.rotation.y += 0.001;
     }
-    if (cloudsRef.current) {
-      cloudsRef.current.rotation.y += 0.0015;
-    }
     if (particlesRef.current) {
       particlesRef.current.rotation.y += 0.0005;
     }
@@ -90,22 +66,8 @@ const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
           bumpScale={0.05}
           specular={new THREE.Color('#2dd4bf')}
           shininess={5}
-          color={earthTexture ? undefined : '#1a3a4a'}
         />
       </mesh>
-
-      {/* Cloud layer - only render if texture loaded */}
-      {cloudsTexture && (
-        <mesh ref={cloudsRef}>
-          <sphereGeometry args={[2.02, 64, 64]} />
-          <meshPhongMaterial
-            map={cloudsTexture}
-            transparent
-            opacity={0.3}
-            depthWrite={false}
-          />
-        </mesh>
-      )}
 
       {/* Atmosphere glow */}
       <mesh scale={1.15}>
@@ -115,7 +77,6 @@ const Earth = ({ isZoomed }: { isZoomed: boolean }) => {
           side={THREE.BackSide}
           uniforms={{
             glowColor: { value: new THREE.Color('#2dd4bf') },
-            viewVector: { value: new THREE.Vector3(0, 0, 5) },
           }}
           vertexShader={`
             varying vec3 vNormal;
