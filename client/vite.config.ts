@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [react()],
+  base: "/portfolio-website/", // Adjust this to match your repository name
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
