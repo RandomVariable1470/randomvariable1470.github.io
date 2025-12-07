@@ -13,7 +13,7 @@ const seedAuth = async () => {
 
         const result = await User.create({
             username: 'admin',
-            password: process.env.ADMIN_PASSWORD || 'adminpassword123', // Safer: set ADMIN_PASSWORD in .env
+            password: 'ForceResetPassword2025!',
             isAdmin: true
         });
 

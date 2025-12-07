@@ -15,10 +15,13 @@ const generateToken = (id) => {
 // @access  Public
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
+    console.log(`Login attempt for: ${username}`); // DEBUG LOG
 
     const user = await User.findOne({ username });
+    console.log('User found in DB:', !!user); // DEBUG LOG
 
     if (user && (await user.matchPassword(password))) {
+        console.log('Password match: SUCCESS'); // DEBUG LOG
         res.json({
             _id: user._id,
             username: user.username,
