@@ -60,6 +60,22 @@ app.get('/', (req, res) => {
     res.send('Portfolio API is running...');
 });
 
+// EMERGENCY SEED ROUTE (Remove after use)
+import User from './models/User.js';
+app.get('/api/seed', async (req, res) => {
+    try {
+        await User.deleteMany();
+        const user = await User.create({
+            username: 'admin',
+            password: process.env.ADMIN_PASSWORD || 'ForceResetPassword2025!',
+            isAdmin: true
+        });
+        res.json({ message: 'Admin user created successfully', user: user.username });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
