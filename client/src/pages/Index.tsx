@@ -1,41 +1,29 @@
 import { useEffect, useState } from "react";
 import ParticleBackground from "@/components/ParticleBackground";
-import InteractiveCursor from "@/components/InteractiveCursor";
-import LoadingScreen from "@/components/LoadingScreen";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Skills from "@/components/Skills";
 import Projects from "@/components/Projects";
-import Timeline from "@/components/Timeline";
 import CyberGlobe from "@/components/CyberGlobe";
 import GithubActivity from "@/components/GithubActivity";
-import EasterEggsSection from "@/components/EasterEggsSection";
+import SystemSetup from "@/components/SystemSetup";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import MathSymbolEasterEggs from "@/components/MathSymbolEasterEggs";
-import AvatarEvolution from "@/components/AvatarEvolution";
-import KonamiCode from "@/components/KonamiCode";
 import BackToTop from "@/components/BackToTop";
 import { PageTransitionProvider } from "@/components/PageTransition";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [devMode, setDevMode] = useState(false);
 
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";
     document.title = "Random Variable | Game Developer & CS Enthusiast";
-    
     return () => {
       document.documentElement.style.scrollBehavior = "auto";
     };
   }, []);
-
-  const handleKonamiActivate = () => {
-    setDevMode(true);
-    document.documentElement.classList.add("dev-mode");
-  };
 
   if (isLoading) {
     return <LoadingScreen onComplete={() => setIsLoading(false)} />;
@@ -43,51 +31,56 @@ const Index = () => {
 
   return (
     <PageTransitionProvider>
-      <div className={`relative min-h-screen bg-premium text-foreground overflow-x-hidden ${devMode ? "dev-mode-active" : ""}`}>
-        {/* Particle background */}
+      <div className="relative min-h-screen bg-premium text-foreground overflow-x-hidden selection:bg-primary/20 selection:text-primary">
         <ParticleBackground />
-        
-        {/* Interactive cursor - only on desktop */}
-        <div className="hidden md:block">
-          <InteractiveCursor />
-        </div>
-
-        {/* Math symbol easter eggs */}
-        <MathSymbolEasterEggs />
-
-        {/* Avatar evolution widget */}
-        <AvatarEvolution />
-
-        {/* Back to top button */}
         <BackToTop />
-
-        {/* Konami code handler */}
-        <KonamiCode onActivate={handleKonamiActivate} />
-
-        {/* Navigation */}
         <Navbar />
 
-        {/* Main content */}
-        <main className="relative z-10">
+        <main className="relative z-10 pb-20">
           <Hero />
-          <About />
-          <Skills />
+
+          {/* Dashboard Grid Section */}
+          <section id="dashboard" className="container mx-auto px-4 py-8 md:py-12 space-y-8 scroll-mt-24">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="h-[1px] flex-1 bg-border/50"></div>
+              <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Command Center</span>
+              <div className="h-[1px] flex-1 bg-border/50"></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(180px,auto)]">
+              {/* Row 1 */}
+              <div className="md:col-span-2 h-full">
+                <About />
+              </div>
+              <div className="md:col-span-1 h-full">
+                <Skills />
+              </div>
+
+              {/* Row 2 */}
+              <div className="md:col-span-1 h-full">
+                <GithubActivity />
+              </div>
+              <div className="md:col-span-1 h-full">
+                <CyberGlobe />
+              </div>
+              <div className="md:col-span-1 h-full">
+                <SystemSetup />
+              </div>
+            </div>
+          </section>
+
+          {/* Full Width Sections */}
           <Projects />
-          <Timeline />
-          <CyberGlobe />
-          <GithubActivity />
-          <EasterEggsSection />
           <Contact />
-          <Footer />
         </main>
 
-        {/* Soft gradient overlays for depth */}
+        <Footer />
+
+        {/* Background Gradients */}
         <div className="fixed inset-0 pointer-events-none z-0">
           <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-background/50 to-transparent" />
           <div className="absolute bottom-0 left-0 w-full h-96 bg-gradient-to-t from-background/80 to-transparent" />
         </div>
-
-        {/* Vignette overlay */}
         <div className="fixed inset-0 pointer-events-none z-0 vignette" />
       </div>
     </PageTransitionProvider>

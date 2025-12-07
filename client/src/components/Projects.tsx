@@ -131,38 +131,20 @@ const Projects = () => {
     api.getProjects().then(setProjects).catch(console.error);
   }, []);
 
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-
-  const orb1Y = useTransform(scrollYProgress, [0, 1], [100, -50]);
-  const orb2Y = useTransform(scrollYProgress, [0, 1], [-50, 100]);
-
   return (
-    <section id="projects" className="py-32 px-6 relative overflow-hidden">
-      {/* Parallax background orbs */}
-      <motion.div
-        className="absolute -top-20 left-1/4 w-72 h-72 bg-primary/6 rounded-full blur-3xl pointer-events-none"
-        style={{ y: orb1Y }}
-      />
-      <motion.div
-        className="absolute -bottom-20 right-1/4 w-80 h-80 bg-accent/8 rounded-full blur-3xl pointer-events-none"
-        style={{ y: orb2Y }}
-      />
-
-      <div className="max-w-5xl mx-auto relative z-10" ref={ref}>
+    <section id="projects" className="py-20 px-6 relative">
+      <div className="max-w-7xl mx-auto relative z-10" ref={ref}>
         <motion.div
-          className="flex items-center gap-3 mb-4"
+          className="flex items-center gap-3 mb-12 justify-center"
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
         >
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border/50" />
+          <div className="h-px w-12 bg-gradient-to-r from-transparent to-border/50" />
           <h2 className="text-sm font-mono text-muted-foreground uppercase tracking-widest">
             Projects
           </h2>
-          <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border/50" />
+          <div className="h-px w-12 bg-gradient-to-l from-transparent to-border/50" />
         </motion.div>
 
         <motion.div
@@ -172,11 +154,11 @@ const Projects = () => {
           transition={{ delay: 0.2, duration: 0.6 }}
         >
           <h3 className="text-3xl md:text-4xl font-bold mb-4">
-            Work In Progress <span className="inline-block animate-wiggle">👀</span>
+            Recent Work <span className="inline-block animate-wiggle">✨</span>
           </h3>
           <p className="text-muted-foreground font-mono text-sm flex items-center justify-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            Cool stuff coming soon. Probably involving physics, engines, or breaking things in C++.
+            Physics simulations, engine experiments, and breaking things in C++.
           </p>
         </motion.div>
 
@@ -187,16 +169,22 @@ const Projects = () => {
         </div>
 
         <motion.div
-          className="mt-8 text-center"
+          className="mt-12 text-center"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
           viewport={{ once: true }}
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full frosted-border bg-card/30 text-muted-foreground text-sm">
-            <span className="w-2 h-2 bg-primary/50 rounded-full animate-pulse" />
-            More projects loading...
-          </div>
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full frosted-border bg-card/30 hover:bg-card/50 text-muted-foreground hover:text-primary transition-all duration-300 group"
+          >
+            <Github className="w-4 h-4" />
+            <span className="text-sm font-medium">View more on GitHub</span>
+            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </a>
         </motion.div>
       </div>
     </section>
