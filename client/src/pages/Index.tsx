@@ -7,12 +7,14 @@ import Skills from "@/components/Skills";
 import Projects from "@/components/Projects";
 import CyberGlobe from "@/components/CyberGlobe";
 import GithubActivity from "@/components/GithubActivity";
-import SystemSetup from "@/components/SystemSetup";
+import ToolsPanel from "@/components/ToolsPanel";
+import FunStats from "@/components/FunStats";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import { PageTransitionProvider } from "@/components/PageTransition";
 import LoadingScreen from "@/components/LoadingScreen";
+import NotesSection from "@/components/NotesSection"; // Will create next
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -36,11 +38,13 @@ const Index = () => {
         <BackToTop />
         <Navbar />
 
-        <main className="relative z-10 pb-20">
-          <Hero />
+        <main className="relative z-10">
+          <section id="home">
+            <Hero />
+          </section>
 
           {/* Dashboard Grid Section */}
-          <section id="dashboard" className="container mx-auto px-4 py-8 md:py-12 space-y-8 scroll-mt-24">
+          <section id="dashboard" className="container mx-auto px-4 py-8 md:py-16 space-y-8 scroll-mt-24">
             <div className="flex items-center gap-4 mb-8">
               <div className="h-[1px] flex-1 bg-border/50"></div>
               <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Command Center</span>
@@ -53,7 +57,7 @@ const Index = () => {
                 <About />
               </div>
               <div className="md:col-span-1 h-full">
-                <Skills />
+                <FunStats />
               </div>
 
               {/* Row 2 */}
@@ -64,14 +68,31 @@ const Index = () => {
                 <CyberGlobe />
               </div>
               <div className="md:col-span-1 h-full">
-                <SystemSetup />
+                <Skills />
+              </div>
+
+              {/* Row 3 - Full Width Tools */}
+              <div className="md:col-span-3 h-full">
+                <ToolsPanel />
               </div>
             </div>
           </section>
 
-          {/* Full Width Sections */}
-          <Projects />
-          <Contact />
+          {/* Projects Section */}
+          <section id="projects" className="scroll-mt-20">
+            <Projects />
+          </section>
+
+          {/* Notes Section */}
+          <section id="notes" className="scroll-mt-20 py-20 bg-background/50 backdrop-blur-sm">
+            <NotesSection />
+          </section>
+
+          {/* Contact Section */}
+          <section id="contact" className="scroll-mt-20">
+            <Contact />
+          </section>
+
         </main>
 
         <Footer />

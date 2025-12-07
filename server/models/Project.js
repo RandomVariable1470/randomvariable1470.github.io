@@ -10,6 +10,8 @@ const projectSchema = new mongoose.Schema({
         enum: ['Concept', 'In Progress', 'Completed', 'On Hold'],
         default: 'In Progress'
     },
+    caseStudy: { type: String }, // Markdown content for detailed view
+    featured: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 });
 

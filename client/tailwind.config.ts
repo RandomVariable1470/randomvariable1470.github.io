@@ -1,6 +1,8 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
+import typography from "@tailwindcss/typography";
 
-export default {
+const config = {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
@@ -132,7 +134,23 @@ export default {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
       },
+      typography: (theme: any) => ({
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            color: 'hsl(var(--foreground))',
+            // ...
+          }
+        }
+      })
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("tailwindcss-animate"),
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require("@tailwindcss/typography"),
+  ],
 } satisfies Config;
+
+export default config;

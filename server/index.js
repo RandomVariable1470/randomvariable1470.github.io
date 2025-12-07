@@ -54,6 +54,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/notes', noteRoutes);
 
 
 app.get('/', (req, res) => {

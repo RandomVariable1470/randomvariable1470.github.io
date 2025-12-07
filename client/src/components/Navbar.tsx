@@ -1,12 +1,12 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import { usePageTransition } from "./PageTransition";
 
 const navLinks = [
   { label: "Home", href: "#home" },
   { label: "Dashboard", href: "#dashboard" },
   { label: "Projects", href: "#projects" },
+  { label: "Notes", href: "#notes" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -15,7 +15,6 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const { scrollY } = useScroll();
-  const { triggerTransition } = usePageTransition();
 
   const navBackground = useTransform(
     scrollY,
@@ -75,9 +74,7 @@ const Navbar = () => {
           {/* Logo - Left */}
           <motion.button
             onClick={() => scrollToSection("#home")}
-            className="font-bold text-lg tracking-tight z-50 relative"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="font-bold text-lg tracking-tight z-50 relative hover:scale-105 transition-transform"
           >
             <span className="text-primary font-mono">&gt;</span> RV
           </motion.button>
@@ -100,7 +97,6 @@ const Navbar = () => {
 
           {/* Mobile Menu Button - Right */}
           <div className="flex items-center gap-4">
-            {/* Placeholder for future right-side items like Theme Toggle */}
             <motion.button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-muted/20"

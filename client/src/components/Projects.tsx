@@ -163,10 +163,34 @@ const Projects = () => {
         </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6" style={{ perspective: "1000px" }}>
-          {projects.map((project, index) => (
+          {projects.filter(p => p.status === 'Completed' || p.status === 'Featured').map((project, index) => (
             <ProjectCard key={project._id || project.title} project={project} index={index} />
           ))}
         </div>
+
+        {/* WIP Section */}
+        {projects.some(p => p.status === 'In Progress' || p.status === 'Concept') && (
+          <motion.div
+            className="mt-24 mb-12"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <div className="flex items-center gap-4 mb-8 justify-center opacity-50">
+              <div className="h-px bg-yellow-500/50 w-24"></div>
+              <span className="text-yellow-500 text-xs font-mono uppercase tracking-widest flex items-center gap-2">
+                In The Lab <span className="animate-pulse">🚧</span>
+              </span>
+              <div className="h-px bg-yellow-500/50 w-24"></div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-80" style={{ perspective: "1000px" }}>
+              {projects.filter(p => p.status === 'In Progress' || p.status === 'Concept').map((project, index) => (
+                <ProjectCard key={project._id || project.title} project={project} index={index} />
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         <motion.div
           className="mt-12 text-center"
@@ -176,7 +200,7 @@ const Projects = () => {
           viewport={{ once: true }}
         >
           <a
-            href="https://github.com"
+            href="https://github.com/randomvariable1470"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full frosted-border bg-card/30 hover:bg-card/50 text-muted-foreground hover:text-primary transition-all duration-300 group"

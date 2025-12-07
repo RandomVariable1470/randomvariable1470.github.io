@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { GitCommit, Users, FolderOpen, Star, GitBranch } from "lucide-react";
+import { AreaChart, Area, ResponsiveContainer } from "recharts";
 import { api } from "@/services/api";
 
 const GithubActivity = () => {
@@ -41,6 +42,13 @@ const GithubActivity = () => {
     fetchData();
   }, []);
 
+  // Mock contribution data for the sparkline
+  const contributionData = [
+    { value: 10 }, { value: 15 }, { value: 8 }, { value: 25 }, { value: 20 },
+    { value: 35 }, { value: 25 }, { value: 45 }, { value: 30 }, { value: 50 },
+    { value: 45 }, { value: 60 }, { value: 55 }, { value: 70 }
+  ];
+
   return (
     <div className="h-full flex flex-col gap-4">
       {/* Stats Grid */}
@@ -57,6 +65,34 @@ const GithubActivity = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Sparkline Trend */}
+      <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-4 hover:border-primary/30 transition-colors h-32 flex flex-col">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Contribution Trend</span>
+          <span className="text-[10px] text-green-400 font-mono">+12%</span>
+        </div>
+        <div className="flex-1 w-full min-h-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={contributionData}>
+              <defs>
+                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#2dd4bf"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#colorValue)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Recent Activity List */}
