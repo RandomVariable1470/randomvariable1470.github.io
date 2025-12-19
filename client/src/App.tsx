@@ -1,27 +1,38 @@
+
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import Index from "./pages/Index";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { WindowProvider } from "@/context/WindowManager";
+import { Desktop } from "@/components/os/Desktop";
+import { BootScreen } from "@/components/os/BootScreen";
+import { useState } from "react";
+
+const queryClient = new QueryClient();
 
 const App = () => {
-  return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
+  const [booted, setBooted] = useState(false);
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/*" element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        {!booted ? (
+          <BootScreen onComplete={() => setBooted(true)} />
+        ) : (
+          <WindowProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Desktop />} />
+                <Route path="*" element={<Desktop />} />
+              </Routes>
+            </BrowserRouter>
+          </WindowProvider>
+        )}
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 
